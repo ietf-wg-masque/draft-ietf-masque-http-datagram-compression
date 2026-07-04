@@ -188,7 +188,7 @@ This specification defines multiple capsule types to construct, acknowledge, and
 
 Processing contexts are created using capsules that define a new unique non-zero `Context ID` encoded as a variable-length integer. A Context ID MUST NOT be reused. As specified in {{Section 4 of CONNECT-UDP}}, even-numbered Context IDs are allocated by the client and odd-numbered by the proxy.
 
-Each processing context MAY reference an already-defined parent context using `Next Context ID` encoded as a variable-length integer. A context MUST reference only a Context ID previously defined by the peer. Forward references are not permitted. Processing context without a parent is identified by `Next Context ID` set to 0. A processing chain MUST NOT contain more than one context of the same type. A receiver that detects such a condition MUST treat the context as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
+Each processing context MAY reference an already-defined parent context using `Next Context ID` encoded as a variable-length integer. A context MUST reference only a Context ID previously defined by the peer. Forward references are not permitted. Processing context without a parent is identified by `Next Context ID` set to 0. A processing chain MUST NOT contain more than one context of the same type. Other processing context chains can also have invalid combinations, if they include contradictory or mutually exclusive steps. Any capsule definition used for these contexts needs to define such cases if they are possible (such as for checksum offload contexts, {{checksum}}). A receiver that detects such an invalid processing chain condition MUST treat the context as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
 
 A receiver of an *_ASSIGN capsule with an invalid `Context ID` or unknown `Next Context ID` MUST treat it as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
 
@@ -339,7 +339,7 @@ DERIVED_CLOSE Capsule {
 
 Processing of the DERIVED_CLOSE capsule is described in {{close}}
 
-## Checksum Offload Capsules
+## Checksum Offload Capsules {#checksum}
 
 ### CHECKSUM_ASSIGN Capsule
 
@@ -376,6 +376,8 @@ If the peer did not advertise `checksum=?1` in `http-datagram-contexts`, the rec
 If `Checksum Start Offset` is 0, the receiver MUST treat the capsule as malformed and follow the same error-handling procedure.
 
 Per-packet validation uses the reconstruction procedure described in {{reconstruction}}.
+
+Chaining a CHECKSUM_ASSIGN capsule with a DERIVED_ASSIGN capsule that defines derivation for a UDP or TCP checksum ({{iana-derived-fields}}) would create an invalid processing chain, as described in {{assign}}. Such chains MUST NOT be defined by senders, and MUST be treated as an error by receivers.
 
 ### CHECKSUM_ACK Capsule
 
