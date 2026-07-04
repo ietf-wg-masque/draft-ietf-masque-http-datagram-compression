@@ -5,8 +5,8 @@
 Multiplexed Application Substrate over QUIC Encryption      Y. Rosomakho
 Internet-Draft                                                   Zscaler
 Intended status: Standards Track                                T. Pauly
-Expires: 23 December 2026                                          Apple
-                                                            21 June 2026
+Expires: 5 January 2027                                            Apple
+                                                             4 July 2026
 
 
        Extensions to Compress and Derive Fields in HTTP Datagrams
@@ -64,7 +64,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 23 December 2026.
+   This Internet-Draft will expire on 5 January 2027.
 
 Copyright Notice
 
@@ -358,9 +358,14 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    peer.  Forward references are not permitted.  Processing context
    without a parent is identified by Next Context ID set to 0.  A
    processing chain MUST NOT contain more than one context of the same
-   type.  A receiver that detects such a condition MUST treat the
-   context as malformed and follow the error-handling procedure defined
-   in Section 3.3 of [HTTP-DATAGRAMS].
+   type.  Other processing context chains can also have invalid
+   combinations, if they include contradictory or mutually exclusive
+   steps.  Any capsule definition used for these contexts needs to
+   define such cases if they are possible (such as for checksum offload
+   contexts, Section 4.4).  A receiver that detects such an invalid
+   processing chain condition MUST treat the context as malformed and
+   follow the error-handling procedure defined in Section 3.3 of
+   [HTTP-DATAGRAMS].
 
    A receiver of an *_ASSIGN capsule with an invalid Context ID or
    unknown Next Context ID MUST treat it as malformed and follow the
@@ -594,6 +599,12 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
 
    Per-packet validation uses the reconstruction procedure described in
    Section 5.2.
+
+   Chaining a CHECKSUM_ASSIGN capsule with a DERIVED_ASSIGN capsule that
+   defines derivation for a UDP or TCP checksum (Section 8.3) would
+   create an invalid processing chain, as described in Section 4.1.1.
+   Such chains MUST NOT be defined by senders, and MUST be treated as an
+   error by receivers.
 
 4.4.2.  CHECKSUM_ACK Capsule
 
@@ -1346,10 +1357,11 @@ TEMPLATE_ASSIGN Capsule {
 9.1.  Normative References
 
    [CONNECT-ETHERNET]
-              Sedeño, A., "Proxying Ethernet in HTTP", Work in Progress,
-              Internet-Draft, draft-ietf-masque-connect-ethernet-09, 12
-              April 2026, <https://datatracker.ietf.org/doc/html/draft-
-              ietf-masque-connect-ethernet-09>.
+              Sedeño, A., "Proxying Ethernet Frames in HTTP", Work in
+              Progress, Internet-Draft, draft-ietf-masque-connect-
+              ethernet-10, 30 June 2026,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-masque-
+              connect-ethernet-10>.
 
    [CONNECT-IP]
               Pauly, T., Ed., Schinazi, D., Chernyakhovsky, A.,
