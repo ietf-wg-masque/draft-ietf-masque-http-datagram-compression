@@ -439,7 +439,7 @@ If the context chain contains a checksum offload context, the sender MUST place 
 
 If a packet does not match any available Processing Context, the sender MUST use Context ID 0 and transmit the complete packet. In such cases, if the packet is transmitted in an HTTP/3 Datagram, it might not fit within the current path MTU towards the peer. When the packet is larger than sizes known to fit within the path MTU as HTTP/3 Datagrams, the sender SHOULD instead send the packet in a DATAGRAM Capsule according to {{Section 3.5 of HTTP-DATAGRAMS}}, which will be encoded on the HTTP data stream and fragmented across QUIC packets if necessary.
 
-To avoid this suboptimal behavior, senders ought to define broad contexts that will be able to handle most or all expected traffic.
+To avoid this suboptimal behavior, senders SHOULD define broad contexts that will be able to handle most or all expected traffic.
 
 ## Receiver behavior {#reconstruction}
 
