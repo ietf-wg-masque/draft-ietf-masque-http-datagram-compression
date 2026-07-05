@@ -5,8 +5,8 @@
 Multiplexed Application Substrate over QUIC Encryption      Y. Rosomakho
 Internet-Draft                                                   Zscaler
 Intended status: Standards Track                                T. Pauly
-Expires: 2 January 2027                                            Apple
-                                                             1 July 2026
+Expires: 6 January 2027                                            Apple
+                                                             5 July 2026
 
 
        Extensions to Compress and Derive Fields in HTTP Datagrams
@@ -64,7 +64,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 January 2027.
+   This Internet-Draft will expire on 6 January 2027.
 
 Copyright Notice
 
@@ -682,8 +682,9 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    might not fit within the current path MTU towards the peer.  When the
    packet is larger than sizes known to fit within the path MTU as
    HTTP/3 Datagrams, the sender SHOULD instead send the packet in a
-   Datagram Capsule, which will be encoded on the HTTP data stream and
-   fragmented across QUIC packets if necessary.
+   DATAGRAM Capsule according to Section 3.5 of [HTTP-DATAGRAMS], which
+   will be encoded on the HTTP data stream and fragmented across QUIC
+   packets if necessary.
 
    To avoid this suboptimal behavior, senders ought to define broad
    contexts that will be able to handle most or all expected traffic.
