@@ -686,7 +686,7 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    will be encoded on the HTTP data stream and fragmented across QUIC
    packets if necessary.
 
-   To avoid this suboptimal behavior, senders ought to define broad
+   To avoid this suboptimal behavior, senders SHOULD define broad
    contexts that will be able to handle most or all expected traffic.
 
 5.2.  Receiver behavior

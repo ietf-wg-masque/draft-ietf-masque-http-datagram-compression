@@ -1946,7 +1946,7 @@ CHECKSUM_CLOSE Capsule {
 <a href="#section-5.1.4" class="section-number selfRef">5.1.4. </a><a href="#name-context-selection" class="section-name selfRef">Context Selection</a>
           </h4>
 <p id="section-5.1.4-1">If a packet does not match any available Processing Context, the sender <span class="bcp14">MUST</span> use Context ID 0 and transmit the complete packet. In such cases, if the packet is transmitted in an HTTP/3 Datagram, it might not fit within the current path MTU towards the peer. When the packet is larger than sizes known to fit within the path MTU as HTTP/3 Datagrams, the sender <span class="bcp14">SHOULD</span> instead send the packet in a DATAGRAM Capsule according to <span><a href="https://rfc-editor.org/rfc/rfc9297#section-3.5" class="relref">Section 3.5</a> of [<a href="#HTTP-DATAGRAMS" class="cite xref">HTTP-DATAGRAMS</a>]</span>, which will be encoded on the HTTP data stream and fragmented across QUIC packets if necessary.<a href="#section-5.1.4-1" class="pilcrow">¶</a></p>
-<p id="section-5.1.4-2">To avoid this suboptimal behavior, senders ought to define broad contexts that will be able to handle most or all expected traffic.<a href="#section-5.1.4-2" class="pilcrow">¶</a></p>
+<p id="section-5.1.4-2">To avoid this suboptimal behavior, senders <span class="bcp14">SHOULD</span> define broad contexts that will be able to handle most or all expected traffic.<a href="#section-5.1.4-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
