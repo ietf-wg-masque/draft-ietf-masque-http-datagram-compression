@@ -472,7 +472,7 @@ Fields that commonly vary during a flow, or that can be modified by endpoints or
 * Packet length fields
 * Checksum fields
 
-When a field can be represented as a Derived Field defined by this specification, implementations SHOULD prefer using the corresponding Derived Field over including that field in a static segment or transmitting it as part of the variable payload. Packet length fields and complete checksums are examples of fields that are generally better represented using Derived Fields when supported by the peer.
+When a field can be represented as a Derived Field defined by this specification, implementations SHOULD prefer using the corresponding Derived Field instead of including that field in a static segment or transmitting it as part of the variable payload. Packet length fields and complete checksums are examples of fields that are generally better represented using Derived Fields when supported by the peer.
 
 The suitability of a field for inclusion in a static segment depends on the deployment and the traffic being carried. For example, some deployments might preserve DSCP values while others rewrite them, and some applications might intentionally vary the IPv6 Flow Label. Implementations are encouraged to prefer templates that remain valid across many datagrams, even if those templates omit fewer bytes than a more aggressive template.
 
