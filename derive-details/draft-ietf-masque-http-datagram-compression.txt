@@ -855,7 +855,7 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    traversal encounters an IPv6 Fragment header before locating the
    required upper-layer header, or if traversal reaches a header whose
    following header cannot be determined, the required header is
-   considered not located.
+   considered not located and derived field compression cannot be used.
 
    If a packet is too short to contain a field being derived, if a
    required protocol header cannot be located, or if a computed value
