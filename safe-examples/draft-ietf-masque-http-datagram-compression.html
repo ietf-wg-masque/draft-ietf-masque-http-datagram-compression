@@ -1958,7 +1958,7 @@ CHECKSUM_CLOSE Capsule {
           <h4 id="name-conservative-template-compo">
 <a href="#section-5.1.5" class="section-number selfRef">5.1.5. </a><a href="#name-conservative-template-compo" class="section-name selfRef">Conservative Template Composition</a>
           </h4>
-<p id="section-5.1.5-1">Reusable templates are most effective when they remain valid for many datagrams. Senders <span class="bcp14">SHOULD</span> construct templates conservatively by including only fields that are expected to remain stable for the lifetime of the Processing Context. Fields whose values can change during the lifetime of a flow <span class="bcp14">SHOULD</span> remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant.<a href="#section-5.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.5-1">Reusable templates are most effective when they remain valid for many datagrams. Senders <span class="bcp14">SHOULD</span> construct templates conservatively by including only fields that are expected to remain stable for the lifetime of the Processing Context. Fields whose values can change during the lifetime of a flow <span class="bcp14">SHOULD</span> remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.<a href="#section-5.1.5-1" class="pilcrow">¶</a></p>
 <p id="section-5.1.5-2">Fields that are commonly suitable for static segments include fields that identify the packet format or the flow, such as:<a href="#section-5.1.5-2" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1.5-3.1">
