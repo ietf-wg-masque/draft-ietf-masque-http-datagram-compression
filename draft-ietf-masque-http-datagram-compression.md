@@ -512,7 +512,7 @@ The EtherType value 0x0800 identifies IPv4, and the EtherType value 0x86dd ident
 
 When multiple derived fields are present in a processing chain, the receiver computes length fields before checksum fields. In particular, IPv4 Total Length, IPv6 Payload Length, and UDP Length fields are computed before IPv4 header, TCP, or UDP checksums.
 
-Where this section requires locating an upper-layer header in an IPv6 packet, the sender and receiver traverse the IPv6 Next Header chain starting from the fixed IPv6 header. The traversal follows extension headers that identify the following header using a Next Header field and whose length can be determined from the packet contents. If traversal encounters an IPv6 Fragment header before locating the required upper-layer header, or if traversal reaches a header whose following header cannot be determined, the required header is considered not located.
+Where this section requires locating an upper-layer header in an IPv6 packet, the sender and receiver traverse the IPv6 Next Header chain starting from the fixed IPv6 header. The traversal follows extension headers that identify the following header using a Next Header field and whose length can be determined from the packet contents. If traversal encounters an IPv6 Fragment header before locating the required upper-layer header, or if traversal reaches a header whose following header cannot be determined, the required header is considered not located and derived field compression cannot be used.
 
 If a packet is too short to contain a field being derived, if a required protocol header cannot be located, or if a computed value cannot be represented in the target field, the packet MUST be dropped.
 
@@ -610,7 +610,7 @@ The receiver writes the computed value into the UDP Length field.
 
 ## UDP Length over IPv6 {#derived-ipv6-udp-length}
 
-The ipv6-udp-length field corresponds to the Length field of the UDP header defined in {{UDP}} when UDP is carried over IPv6.
+The `ipv6-udp-length` field corresponds to the Length field of the UDP header defined in {{UDP}} when UDP is carried over IPv6.
 
 The field location is:
 
