@@ -2022,7 +2022,7 @@ CHECKSUM_CLOSE Capsule {
               <p id="section-5.1.5-5.11.1">Checksum fields<a href="#section-5.1.5-5.11.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
-<p id="section-5.1.5-6">When a field can be represented as a Derived Field defined by this specification, implementations <span class="bcp14">SHOULD</span> prefer using the corresponding Derived Field over including that field in a static segment or transmitting it as part of the variable payload. Packet length fields and complete checksums are examples of fields that are generally better represented using Derived Fields when supported by the peer.<a href="#section-5.1.5-6" class="pilcrow">¶</a></p>
+<p id="section-5.1.5-6">When a field can be represented as a Derived Field defined by this specification, implementations <span class="bcp14">SHOULD</span> prefer using the corresponding Derived Field instead of including that field in a static segment or transmitting it as part of the variable payload. Packet length fields and complete checksums are examples of fields that are generally better represented using Derived Fields when supported by the peer.<a href="#section-5.1.5-6" class="pilcrow">¶</a></p>
 <p id="section-5.1.5-7">The suitability of a field for inclusion in a static segment depends on the deployment and the traffic being carried. For example, some deployments might preserve DSCP values while others rewrite them, and some applications might intentionally vary the IPv6 Flow Label. Implementations are encouraged to prefer templates that remain valid across many datagrams, even if those templates omit fewer bytes than a more aggressive template.<a href="#section-5.1.5-7" class="pilcrow">¶</a></p>
 </section>
 </div>

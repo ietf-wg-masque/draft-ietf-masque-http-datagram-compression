@@ -761,7 +761,7 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
 
    When a field can be represented as a Derived Field defined by this
    specification, implementations SHOULD prefer using the corresponding
-   Derived Field over including that field in a static segment or
+   Derived Field instead of including that field in a static segment or
    transmitting it as part of the variable payload.  Packet length
    fields and complete checksums are examples of fields that are
    generally better represented using Derived Fields when supported by
