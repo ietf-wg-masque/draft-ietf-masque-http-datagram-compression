@@ -1054,7 +1054,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Rosomakho &amp; Pauly</td>
-<td class="center">Expires 6 January 2027</td>
+<td class="center">Expires 7 January 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1067,12 +1067,12 @@ svg {
 <dd class="internet-draft">draft-ietf-masque-http-datagram-compression-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-07-05" class="published">5 July 2026</time>
+<time datetime="2026-07-06" class="published">6 July 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-01-06">6 January 2027</time></dd>
+<dd class="expires"><time datetime="2027-01-07">7 January 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1129,7 +1129,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 6 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 7 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1267,6 +1267,9 @@ svg {
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.4">
                     <p id="section-toc.1-1.5.2.1.2.4.1"><a href="#section-5.1.4" class="auto internal xref">5.1.4</a>.  <a href="#name-context-selection" class="internal xref">Context Selection</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.5">
+                    <p id="section-toc.1-1.5.2.1.2.5.1"><a href="#section-5.1.5" class="auto internal xref">5.1.5</a>.  <a href="#name-conservative-template-compo" class="internal xref">Conservative Template Composition</a></p>
 </li>
                 </ul>
 </li>
@@ -1950,6 +1953,79 @@ CHECKSUM_CLOSE Capsule {
 <p id="section-5.1.4-2">To avoid this suboptimal behavior, senders <span class="bcp14">SHOULD</span> define broad contexts that will be able to handle most or all expected traffic.<a href="#section-5.1.4-2" class="pilcrow">¶</a></p>
 </section>
 </div>
+<div id="template-composition">
+<section id="section-5.1.5">
+          <h4 id="name-conservative-template-compo">
+<a href="#section-5.1.5" class="section-number selfRef">5.1.5. </a><a href="#name-conservative-template-compo" class="section-name selfRef">Conservative Template Composition</a>
+          </h4>
+<p id="section-5.1.5-1">Reusable templates are most effective when they remain valid for many datagrams. Senders <span class="bcp14">SHOULD</span> construct templates conservatively by including only fields that are expected to remain stable for the lifetime of the Processing Context. Fields whose values can change during the lifetime of a flow <span class="bcp14">SHOULD</span> remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.<a href="#section-5.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.5-2">Fields that are commonly suitable for static segments include fields that identify the packet format or the flow, such as:<a href="#section-5.1.5-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.1.5-3.1">
+              <p id="section-5.1.5-3.1.1">Ethernet source and destination addresses, when stable for the frame sequence<a href="#section-5.1.5-3.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-3.2">
+              <p id="section-5.1.5-3.2.1">EtherType<a href="#section-5.1.5-3.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-3.3">
+              <p id="section-5.1.5-3.3.1">802.1Q tag<a href="#section-5.1.5-3.3.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-3.4">
+              <p id="section-5.1.5-3.4.1">IP version<a href="#section-5.1.5-3.4.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-3.5">
+              <p id="section-5.1.5-3.5.1">Source and destination IP addresses<a href="#section-5.1.5-3.5.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-3.6">
+              <p id="section-5.1.5-3.6.1">IPv4 TTL / IPv6 Hop Limit<a href="#section-5.1.5-3.6.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-3.7">
+              <p id="section-5.1.5-3.7.1">IPv4 Protocol / IPv6 Next Header<a href="#section-5.1.5-3.7.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-3.8">
+              <p id="section-5.1.5-3.8.1">Source and destination transport ports<a href="#section-5.1.5-3.8.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+<p id="section-5.1.5-4">Fields that commonly vary during a flow, or that can be modified by endpoints or network devices, are generally poor candidates for static segments. Examples include:<a href="#section-5.1.5-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.1.5-5.1">
+              <p id="section-5.1.5-5.1.1">IPv4 DSCP and ECN bits, and IPv6 Traffic Class<a href="#section-5.1.5-5.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.2">
+              <p id="section-5.1.5-5.2.1">IPv4 Identification<a href="#section-5.1.5-5.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.3">
+              <p id="section-5.1.5-5.3.1">IPv4 Flags and Fragment Offset, unless packets using the template are known not to be fragmented<a href="#section-5.1.5-5.3.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.4">
+              <p id="section-5.1.5-5.4.1">IPv6 Flow Label, unless the sender knows it is stable for the flow<a href="#section-5.1.5-5.4.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.5">
+              <p id="section-5.1.5-5.5.1">TCP Sequence Number<a href="#section-5.1.5-5.5.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.6">
+              <p id="section-5.1.5-5.6.1">TCP Acknowledgement Number<a href="#section-5.1.5-5.6.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.7">
+              <p id="section-5.1.5-5.7.1">TCP Flags<a href="#section-5.1.5-5.7.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.8">
+              <p id="section-5.1.5-5.8.1">TCP Window<a href="#section-5.1.5-5.8.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.9">
+              <p id="section-5.1.5-5.9.1">TCP Timestamp values<a href="#section-5.1.5-5.9.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.10">
+              <p id="section-5.1.5-5.10.1">Packet length fields<a href="#section-5.1.5-5.10.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-5.1.5-5.11">
+              <p id="section-5.1.5-5.11.1">Checksum fields<a href="#section-5.1.5-5.11.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+<p id="section-5.1.5-6">When a field can be represented as a Derived Field defined by this specification, implementations <span class="bcp14">SHOULD</span> prefer using the corresponding Derived Field instead of including that field in a static segment or transmitting it as part of the variable payload. Packet length fields and complete checksums are examples of fields that are generally better represented using Derived Fields when supported by the peer.<a href="#section-5.1.5-6" class="pilcrow">¶</a></p>
+<p id="section-5.1.5-7">The suitability of a field for inclusion in a static segment depends on the deployment and the traffic being carried. For example, some deployments might preserve DSCP values while others rewrite them, and some applications might intentionally vary the IPv6 Flow Label. Implementations are encouraged to prefer templates that remain valid across many datagrams, even if those templates omit fewer bytes than a more aggressive template.<a href="#section-5.1.5-7" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 <div id="reconstruction">
@@ -2037,6 +2113,7 @@ CHECKSUM_CLOSE Capsule {
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-examples" class="section-name selfRef">Examples</a>
       </h2>
 <p id="section-6-1">This section illustrates how contexts are created and how senders form compact payloads. All offsets and lengths are in bits in the packet diagrams and field tables. All offsets and lengths are in bytes in segment tables and sample capsules.<a href="#section-6-1" class="pilcrow">¶</a></p>
+<p id="section-6-2">The examples below are illustrative. Implementations are expected to follow <a href="#template-composition" class="auto internal xref">Section 5.1.5</a> and select static and variable fields based on the traffic being carried and the stability of those fields in the relevant deployment.<a href="#section-6-2" class="pilcrow">¶</a></p>
 <div id="connect-ip-tcp-over-ipv6-with-template-derived-fields-and-checksum-offload">
 <section id="section-6.1">
         <h3 id="name-connect-ip-tcp-over-ipv6-wi">
