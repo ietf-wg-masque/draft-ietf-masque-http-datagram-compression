@@ -445,7 +445,7 @@ To avoid this suboptimal behavior, senders SHOULD define broad contexts that wil
 
 ### Conservative Template Composition {#template-composition}
 
-Reusable templates are most effective when they remain valid for many datagrams. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable for the lifetime of the Processing Context. Fields whose values can change during the lifetime of a flow SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant.
+Reusable templates are most effective when they remain valid for many datagrams. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable for the lifetime of the Processing Context. Fields whose values can change during the lifetime of a flow SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.
 
 Fields that are commonly suitable for static segments include fields that identify the packet format or the flow, such as:
 
