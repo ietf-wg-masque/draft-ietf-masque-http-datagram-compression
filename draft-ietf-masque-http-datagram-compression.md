@@ -36,6 +36,8 @@ author:
 normative:
 
 informative:
+  IEEE802.3: DOI.10.1109/IEEESTD.2022.9844436
+  IEEE802.1Q: DOI.10.1109/IEEESTD.2022.10004498
 
 --- abstract
 
@@ -120,7 +122,7 @@ This document defines the following optional dictionary keys:
 
 `derived` (Inner List):
 
-: A list of supported Derived Field Types as defined in {{iana-derived-fields}}.
+: A list of supported Derived Field Types as defined in {{iana-derived-fields}}. Initial field definitions and reconstruction procedures are specified in {{derived-field-definitions}}.
 
 `checksum` (Boolean):
 
@@ -305,6 +307,8 @@ DERIVED_ASSIGN Capsule {
 
 The DERIVED_ASSIGN capsule defines a processing context that generates and inserts one or more derived fields into the reconstructed packet. The sender does not transmit these fields in the datagram payload.
 
+The Derived Field Types defined by this document and their reconstruction procedures are specified in {{derived-field-definitions}}. The numeric code points for these field types are registered in {{iana-derived-fields}}.
+
 #### Parsing and validation
 
 The receiver parses a DERIVED_ASSIGN capsule by reading, in order: the Context ID, the Next Context ID, and one or more Derived Field Type values encoded as variable-length integers. Context ID and Next Context ID processing is described in {{assign}}.
@@ -473,7 +477,7 @@ For each derived field present in the context chain, the receiver computes the f
 
 Derived fields are inserted into the packet image and therefore increase the reconstructed packet size. The receiver MUST compute derived field values based on the final reconstructed packet size and structure.
 
-Initial field definitions are specified in {{iana-derived-fields}}.
+Initial field definitions and reconstruction procedures are specified in {{derived-field-definitions}}.
 
 If the required header cannot be located, the packet MUST be dropped.
 
@@ -490,13 +494,363 @@ The receiver completes the checksum as follows:
 
 If any offset exceeds the reconstructed packet length, the packet MUST be dropped.
 
+# Derived Field Definitions {#derived-field-definitions}
+
+This section defines the initial Derived Field Types registered by this document in {{iana-derived-fields}}.
+
+All offsets in this section are in octets from the beginning of the reconstructed packet or frame. All multi-octet integer fields are encoded in network byte order.
+
+For CONNECT-IP, the IP header starts at offset 0.
+
+For CONNECT-ETHERNET, the IP- and transport-layer Derived Field Types defined in this section apply to Ethernet II frames carrying IPv4 or IPv6, including frames with a single IEEE 802.1Q VLAN tag.
+
+For an untagged Ethernet II frame {{IEEE802.3}}, the EtherType field is located at offset 12 and the IP header starts at offset 14.
+
+For an Ethernet II frame with a single IEEE 802.1Q VLAN tag {{IEEE802.1Q}}, the Tag Protocol Identifier (TPID) field is located at offset 12 and has value 0x8100. The encapsulated EtherType field is located at offset 16 and the IP header starts at offset 18. Frames with multiple VLAN tags or other link-layer encapsulations are not processed by these Derived Field Types unless a future specification defines how the relevant network-layer header is located.
+
+The EtherType value 0x0800 identifies IPv4, and the EtherType value 0x86dd identifies IPv6. If the relevant EtherType does not identify the protocol required by the Derived Field Type, the sender MUST NOT use a Processing Context containing that Derived Field Type for the frame. If the receiver cannot locate the header required by a Derived Field Type in the selected Processing Context, the datagram MUST be dropped.
+
+When multiple derived fields are present in a processing chain, the receiver computes length fields before checksum fields. In particular, IPv4 Total Length, IPv6 Payload Length, and UDP Length fields are computed before IPv4 header, TCP, or UDP checksums.
+
+Where this section requires locating an upper-layer header in an IPv6 packet, the sender and receiver traverse the IPv6 Next Header chain starting from the fixed IPv6 header. The traversal follows extension headers that identify the following header using a Next Header field and whose length can be determined from the packet contents. If traversal encounters an IPv6 Fragment header before locating the required upper-layer header, or if traversal reaches a header whose following header cannot be determined, the required header is considered not located.
+
+If a packet is too short to contain a field being derived, if a required protocol header cannot be located, or if a computed value cannot be represented in the target field, the packet MUST be dropped.
+
+## IPv4 Total Length {#derived-ipv4-total-length}
+
+The `ipv4-total-length` field corresponds to the Total Length field of the IPv4 header defined in {{Section 3.1 of ?IPv4=RFC791}}.
+
+The field location is:
+
+Field | Offset from start of IPv4 header | Length
+--- | --- | ---
+Total Length | 2 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the IPv4 Total Length field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv4 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv4 version value 4 before using this Derived Field Type.
+
+The sender MUST verify that the value of the IPv4 Total Length field in the original packet is equal to the number of octets from the start of the IPv4 header to the end of the IPv4 packet that will be reconstructed by the receiver. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+### Receiver Behavior
+
+The receiver locates the IPv4 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv4 version value 4. The Internet Header Length (IHL) field MUST indicate an IPv4 header length of at least 20 octets and no larger than the reconstructed IPv4 packet.
+
+The receiver computes the field value as the number of octets from the start of the IPv4 header to the end of the reconstructed IPv4 packet. If the computed value is greater than 65535, the packet MUST be dropped.
+
+The receiver writes the computed value into the IPv4 Total Length field.
+
+## IPv6 Payload Length {#derived-ipv6-payload-length}
+
+The `ipv6-payload-length` field corresponds to the Payload Length field of the IPv6 header defined in {{Section 3 of ?IPv6=RFC8200}}.
+
+The field location is:
+
+Field | Offset from start of IPv6 header | Length
+--- | --- | ---
+Payload Length | 4 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the IPv6 Payload Length field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv6 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv6 version value 6 before using this Derived Field Type.
+
+The sender MUST verify that the value of the IPv6 Payload Length field in the original packet is equal to the number of octets following the fixed 40-octet IPv6 header in the IPv6 packet that will be reconstructed by the receiver. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+This Derived Field Type does not support IPv6 jumbograms ({{?IPv6-JUMBO=RFC2675}}). If the IPv6 Payload Length field in the original packet is zero, the sender MUST NOT use this Derived Field Type for that packet.
+
+### Receiver Behavior
+
+The receiver locates the IPv6 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv6 version value 6.
+
+The receiver computes the field value as the number of octets following the fixed 40-octet IPv6 header in the reconstructed IPv6 packet. If the computed value is 0 or greater than 65535, the packet MUST be dropped.
+
+The receiver writes the computed value into the IPv6 Payload Length field.
+
+## UDP Length over IPv4 {#derived-ipv4-udp-length}
+
+The `ipv4-udp-length` field corresponds to the Length field of the UDP header defined in {{?UDP=RFC768}} when UDP is carried over IPv4.
+
+The field location is:
+
+Field | Offset from start of UDP header | Length
+--- | --- | ---
+Length | 4 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the UDP Length field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv4 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv4 version value 4 before using this Derived Field Type.
+
+The sender MUST verify that the IPv4 Protocol field contains the UDP protocol number 17.
+
+The sender MUST verify that the IPv4 packet is not fragmented. In particular, the sender MUST verify that the More Fragments flag is 0 and that the Fragment Offset field is 0 before using this Derived Field Type.
+
+The sender determines the UDP header offset from the IPv4 Internet Header Length (IHL) field. The sender MUST verify that the IPv4 packet contains at least 8 octets starting at that offset.
+
+The sender MUST verify that the value of the UDP Length field in the original packet is equal to the number of octets from the start of the UDP header to the end of the IPv4 packet that will be reconstructed by the receiver. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+### Receiver Behavior
+
+The receiver locates the IPv4 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv4 version value 4. The Internet Header Length (IHL) field MUST indicate an IPv4 header length of at least 20 octets and no larger than the reconstructed IPv4 packet.
+
+The IPv4 Protocol field MUST contain the UDP protocol number 17.
+
+The IPv4 packet MUST NOT be fragmented. The More Fragments flag MUST be 0 and the Fragment Offset field MUST be 0.
+
+The receiver determines the UDP header offset from the IPv4 Internet Header Length (IHL) field. If the reconstructed IPv4 packet does not contain at least 8 octets starting at that offset, the packet MUST be dropped.
+
+The receiver computes the UDP Length field as the number of octets from the start of the UDP header to the end of the reconstructed IPv4 packet. If the computed value is less than 8 or greater than 65535, the packet MUST be dropped.
+
+The receiver writes the computed value into the UDP Length field.
+
+## UDP Length over IPv6 {#derived-ipv6-udp-length}
+
+The ipv6-udp-length field corresponds to the Length field of the UDP header defined in {{UDP}} when UDP is carried over IPv6.
+
+The field location is:
+
+Field | Offset from start of UDP header | Length
+--- | --- | ---
+Length | 4 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the UDP Length field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv6 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv6 version value 6 before using this Derived Field Type.
+
+The sender MUST locate the UDP header by traversing the IPv6 Next Header chain starting from the fixed IPv6 header. The sender MUST NOT use this Derived Field Type for a packet if this traversal does not identify a UDP header, if the UDP header is not fully contained in the IPv6 packet, or if the traversal encounters an IPv6 Fragment header before reaching the UDP header.
+
+The sender MUST verify that the value of the UDP Length field in the original packet is equal to the number of octets from the start of the UDP header to the end of the IPv6 packet that will be reconstructed by the receiver. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+### Receiver Behavior
+
+The receiver locates the IPv6 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv6 version value 6.
+
+The receiver locates the UDP header by traversing the IPv6 Next Header chain starting from the fixed IPv6 header. If traversal does not identify a UDP header, if traversal encounters an IPv6 Fragment header before reaching the UDP header, or if the reconstructed IPv6 packet does not contain a complete UDP header at the resulting offset, the packet MUST be dropped.
+
+The receiver computes the UDP Length field as the number of octets from the start of the UDP header to the end of the reconstructed IPv6 packet. If the computed value is less than 8 or greater than 65535, the packet MUST be dropped.
+
+The receiver writes the computed value into the UDP Length field.
+
+## IPv4 Header Checksum {#derived-ipv4-header-checksum}
+
+The `ipv4-header-checksum` field corresponds to the Header Checksum field of the IPv4 header defined in {{Section 3.1 of IPv4}}.
+
+The field location is:
+
+Field | Offset from start of IPv4 header | Length
+--- | --- | ---
+Header Checksum | 10 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the IPv4 Header Checksum field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv4 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv4 version value 4 before using this Derived Field Type.
+
+The sender MUST verify that the Internet Header Length (IHL) field indicates an IPv4 header length of at least 20 octets and no larger than the original IPv4 packet.
+
+The sender MUST verify that the value of the IPv4 Header Checksum field in the original packet is equal to the Internet checksum computed over the IPv4 header, with the IPv4 Header Checksum field treated as zero for the computation. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+### Receiver Behavior
+
+The receiver locates the IPv4 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv4 version value 4. The Internet Header Length (IHL) field MUST indicate an IPv4 header length of at least 20 octets and no larger than the reconstructed IPv4 packet.
+
+The receiver computes the IPv4 header checksum over the IPv4 header, with the IPv4 Header Checksum field treated as zero for the computation.
+
+The receiver writes the computed value into the IPv4 Header Checksum field.
+
+## TCP Checksum over IPv4 {#derived-ipv4-tcp-checksum}
+
+The `ipv4-tcp-checksum` field corresponds to the Checksum field of the TCP header defined in {{Section 3.1 of ?TCP=RFC9293}} when TCP is carried over IPv4.
+
+The field location is:
+
+Field | Offset from start of TCP header | Length
+--- | --- | ---
+Checksum | 16 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the TCP Checksum field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv4 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv4 version value 4 before using this Derived Field Type.
+
+The sender MUST verify that the IPv4 Protocol field contains the TCP protocol number 6.
+
+The sender MUST verify that the IPv4 packet is not fragmented. In particular, the sender MUST verify that the More Fragments flag is 0 and that the Fragment Offset field is 0 before using this Derived Field Type.
+
+The sender determines the TCP header offset from the IPv4 Internet Header Length (IHL) field. The sender MUST verify that the IPv4 packet contains at least 20 octets starting at that offset.
+
+The sender MUST verify that the TCP Data Offset field indicates a TCP header length of at least 20 octets and no larger than the TCP segment contained in the IPv4 packet. The TCP header length is the value of the TCP Data Offset field multiplied by 4.
+
+The sender MUST verify that the value of the TCP Checksum field in the original packet is equal to the Internet checksum computed over the IPv4 pseudo-header, the TCP header, and the TCP payload, with the TCP Checksum field treated as zero for the computation. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+### Receiver Behavior
+
+The receiver locates the IPv4 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv4 version value 4. The Internet Header Length (IHL) field MUST indicate an IPv4 header length of at least 20 octets and no larger than the reconstructed IPv4 packet.
+
+The IPv4 Protocol field MUST contain the TCP protocol number 6.
+
+The IPv4 packet MUST NOT be fragmented. The More Fragments flag MUST be 0 and the Fragment Offset field MUST be 0.
+
+The receiver determines the TCP header offset from the IPv4 Internet Header Length (IHL) field. If the reconstructed IPv4 packet does not contain at least 20 octets starting at that offset, the packet MUST be dropped.
+
+The TCP Data Offset field MUST indicate a TCP header length of at least 20 octets and no larger than the TCP segment contained in the reconstructed IPv4 packet. The TCP header length is the value of the TCP Data Offset field multiplied by 4.
+
+The receiver computes the TCP Checksum over the IPv4 pseudo-header, the TCP header, and the TCP payload, with the TCP Checksum field treated as zero for the computation.
+
+The receiver writes the computed value into the TCP Checksum field.
+
+## TCP Checksum over IPv6 {#derived-ipv6-tcp-checksum}
+
+The `ipv6-tcp-checksum` field corresponds to the Checksum field of the TCP header defined in {{Section 3.1 of TCP}} when TCP is carried over IPv6.
+
+The field location is:
+
+Field | Offset from start of TCP header | Length
+--- | --- | ---
+Checksum | 16 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the TCP Checksum field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv6 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv6 version value 6 before using this Derived Field Type.
+
+The sender MUST locate the TCP header by traversing the IPv6 Next Header chain starting from the fixed IPv6 header. The sender MUST NOT use this Derived Field Type for a packet if this traversal does not identify a TCP header, if the TCP header is not fully contained in the IPv6 packet, or if the traversal encounters an IPv6 Fragment header before reaching the TCP header.
+
+The sender MUST verify that the TCP Data Offset field indicates a TCP header length of at least 20 octets and no larger than the TCP segment contained in the IPv6 packet. The TCP header length is the value of the TCP Data Offset field multiplied by 4.
+
+The sender MUST verify that the value of the TCP Checksum field in the original packet is equal to the Internet checksum computed over the IPv6 pseudo-header, the TCP header, and the TCP payload, with the TCP Checksum field treated as zero for the computation. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+### Receiver Behavior
+
+The receiver locates the IPv6 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv6 version value 6.
+
+The receiver locates the TCP header by traversing the IPv6 Next Header chain starting from the fixed IPv6 header. If traversal does not identify a TCP header, if traversal encounters an IPv6 Fragment header before reaching the TCP header, or if the reconstructed IPv6 packet does not contain a complete TCP header at the resulting offset, the packet MUST be dropped.
+
+The TCP Data Offset field MUST indicate a TCP header length of at least 20 octets and no larger than the TCP segment contained in the reconstructed IPv6 packet. The TCP header length is the value of the TCP Data Offset field multiplied by 4.
+
+The receiver computes the TCP Checksum over the IPv6 pseudo-header, the TCP header, and the TCP payload, with the TCP Checksum field treated as zero for the computation.
+
+The receiver writes the computed value into the TCP Checksum field.
+
+## UDP Checksum over IPv4 {#derived-ipv4-udp-checksum}
+
+The `ipv4-udp-checksum` field corresponds to the Checksum field of the UDP header defined in {{UDP}} when UDP is carried over IPv4.
+
+The field location is:
+
+Field | Offset from start of UDP header | Length
+--- | --- | ---
+Checksum | 6 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the UDP Checksum field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv4 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv4 version value 4 before using this Derived Field Type.
+
+The sender MUST verify that the IPv4 Protocol field contains the UDP protocol number 17.
+
+The sender MUST verify that the IPv4 packet is not fragmented. In particular, the sender MUST verify that the More Fragments flag is 0 and that the Fragment Offset field is 0 before using this Derived Field Type.
+
+The sender determines the UDP header offset from the IPv4 Internet Header Length (IHL) field. The sender MUST verify that the IPv4 packet contains at least 8 octets starting at that offset.
+
+The sender MUST verify that the UDP Length field is at least 8 and no larger than the number of octets from the start of the UDP header to the end of the IPv4 packet.
+
+The sender MUST verify that the value of the UDP Checksum field in the original packet is equal to the Internet checksum computed over the IPv4 pseudo-header, the UDP header, and the UDP payload, with the UDP Checksum field treated as zero for the computation. If the computed checksum value is zero, the value to be compared is 0xffff. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+This Derived Field Type always generates a UDP checksum. The sender MUST NOT use this Derived Field Type for IPv4 UDP packets that use a UDP Checksum field value of zero to indicate that no checksum is present.
+
+### Receiver Behavior
+
+The receiver locates the IPv4 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv4 version value 4. The Internet Header Length (IHL) field MUST indicate an IPv4 header length of at least 20 octets and no larger than the reconstructed IPv4 packet.
+
+The IPv4 Protocol field MUST contain the UDP protocol number 17.
+
+The IPv4 packet MUST NOT be fragmented. The More Fragments flag MUST be 0 and the Fragment Offset field MUST be 0.
+
+The receiver determines the UDP header offset from the IPv4 Internet Header Length (IHL) field. If the reconstructed IPv4 packet does not contain at least 8 octets starting at that offset, the packet MUST be dropped.
+
+The UDP Length field MUST be at least 8 and no larger than the number of octets from the start of the UDP header to the end of the reconstructed IPv4 packet.
+
+The receiver computes the UDP Checksum over the IPv4 pseudo-header, the UDP header, and the UDP payload, with the UDP Checksum field treated as zero for the computation. If the computed checksum value is zero, the receiver writes 0xffff into the UDP Checksum field. Otherwise, the receiver writes the computed value into the UDP Checksum field.
+
+## UDP Checksum over IPv6 {#derived-ipv6-udp-checksum}
+
+The `ipv6-udp-checksum` field corresponds to the Checksum field of the UDP header defined in {{UDP}} when UDP is carried over IPv6.
+
+The field location is:
+
+Field | Offset from start of UDP header | Length
+--- | --- | ---
+Checksum | 6 | 2
+
+### Sender Behavior
+
+When using this Derived Field Type, the sender removes the UDP Checksum field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for packets whose IPv6 header can be located according to the rules in {{derived-field-definitions}}. The sender MUST verify that the first four bits of the located IP header contain the IPv6 version value 6 before using this Derived Field Type.
+
+The sender MUST locate the UDP header by traversing the IPv6 Next Header chain starting from the fixed IPv6 header. The sender MUST NOT use this Derived Field Type for a packet if this traversal does not identify a UDP header, if the UDP header is not fully contained in the IPv6 packet, or if the traversal encounters an IPv6 Fragment header before reaching the UDP header.
+
+The sender MUST verify that the UDP Length field is at least 8 and no larger than the number of octets from the start of the UDP header to the end of the IPv6 packet.
+
+The sender MUST verify that the value of the UDP Checksum field in the original packet is equal to the Internet checksum computed over the IPv6 pseudo-header, the UDP header, and the UDP payload, with the UDP Checksum field treated as zero for the computation. If the computed checksum value is zero, the value to be compared is 0xffff. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+### Receiver Behavior
+
+The receiver locates the IPv6 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv6 version value 6.
+
+The receiver locates the UDP header by traversing the IPv6 Next Header chain starting from the fixed IPv6 header. If traversal does not identify a UDP header, if traversal encounters an IPv6 Fragment header before reaching the UDP header, or if the reconstructed IPv6 packet does not contain a complete UDP header at the resulting offset, the packet MUST be dropped.
+
+The UDP Length field MUST be at least 8 and no larger than the number of octets from the start of the UDP header to the end of the reconstructed IPv6 packet.
+
+The receiver computes the UDP Checksum over the IPv6 pseudo-header, the UDP header, and the UDP payload, with the UDP Checksum field treated as zero for the computation. If the computed checksum value is zero, the receiver writes 0xffff into the UDP Checksum field. Otherwise, the receiver writes the computed value into the UDP Checksum field.
+
+## Ethernet Frame Check Sequence {#derived-ethernet-fcs}
+
+The `ethernet-fcs` field corresponds to the Frame Check Sequence (FCS) field of the Ethernet frame defined in {{IEEE802.3}}.
+
+This Derived Field Type applies only to CONNECT-ETHERNET.
+
+The field location is:
+
+Field | Offset from start of Ethernet frame | Length
+--- | --- | ---
+Frame Check Sequence | Final 4 octets of frame | 4
+
+### Sender behavior
+
+When using this Derived Field Type, the sender removes the Ethernet Frame Check Sequence field from the datagram payload.
+
+The sender MUST only use this Derived Field Type for Ethernet frames that contain an FCS field. The sender MUST verify that the original Ethernet frame is long enough to contain the Destination MAC Address, Source MAC Address, EtherType or length field, and FCS field before using this Derived Field Type.
+
+The sender MUST verify that the value of the FCS field in the original Ethernet frame is equal to the Ethernet Frame Check Sequence computed over the frame starting at the Destination MAC Address field and ending immediately before the FCS field. If the value does not match, the sender MUST NOT use this Derived Field Type for that frame.
+
+### Receiver Behavior
+
+The receiver verifies that the reconstructed Ethernet frame is long enough to contain the Destination MAC Address, Source MAC Address, EtherType or length field, and FCS field. If the reconstructed frame is too short, the datagram MUST be dropped.
+
+The receiver computes the Ethernet Frame Check Sequence over the reconstructed Ethernet frame starting at the Destination MAC Address field and ending immediately before the FCS field.
+
+The receiver writes the computed value into the Ethernet Frame Check Sequence field.
+
 # Examples
 
 This section illustrates how contexts are created and how senders form compact payloads. All offsets and lengths are in bits in the packet diagrams and field tables. All offsets and lengths are in bytes in segment tables and sample capsules.
 
 ## CONNECT-IP: TCP over IPv6 with template, derived fields and checksum offload
 
-Original sample {{?TCP=RFC9293}} over {{?IPv6=RFC8200}} packet layout is illustrated below. In addition to basic IPv6 and TCP headers it contains Timestamp option as defined in {{Section 3 of ?TCP-PERF=RFC7323}}.
+Original sample {{TCP}} over {{IPv6}} packet layout is illustrated below. In addition to basic IPv6 and TCP headers it contains Timestamp option as defined in {{Section 3 of ?TCP-PERF=RFC7323}}.
 
 This packet is to be transmitted from the client to the proxy over CONNECT-IP.
 
@@ -648,7 +1002,7 @@ Upon receiving the datagram with Context ID 6, proxy re-assembles the datagram b
 
 ## CONNECT-ETHERNET: UDP over IPv4 with template and derived fields
 
-Original sample {{?UDP=RFC768}} over {{?IPv4=RFC791}} Ethernet frame layout is illustrated below.
+Original sample {{UDP}} over {{IPv4}} Ethernet frame layout is illustrated below.
 
 This frame is to be transmitted from the proxy to the client over CONNECT-ETHERNET.
 
@@ -838,6 +1192,8 @@ This specification registers the following value in the "HTTP Field Name" regist
 
 IANA is requested to create a new registry titled "HTTP Datagram Derived Field Types". The registration policy is expert review as specified in {{Section 4.5 of ?IANA-POLICY=RFC8126}}. This new registry governs the Derived Field types that appear in DERIVED_ASSIGN capsule and `derived` list of `http-datagram-contexts` dictionary.
 
+Registrations are expected to reference a specification that defines how the field is derived. Such specifications are expected to describe the sender behavior and receiver behavior for the Derived Field Type, including how the relevant packet or frame header is located, the offset and length of the field, how the field value is computed, and any conditions under which the Derived Field Type is not applicable.
+
 This new registry contains five columns:
 
 Type:
@@ -873,6 +1229,7 @@ Type | Name | Description | Protocols | Reference
 6 | ipv6-tcp-checksum | TCP checksum computed over IPv6 pseudo-header and segment | connect-ip, connect-ethernet | This document
 7 | ipv4-udp-checksum | UDP checksum computed over IPv4 pseudo-header and segment | connect-ip, connect-ethernet | This document
 8 | ipv6-udp-checksum | UDP checksum computed over IPv6 pseudo-header and segment | connect-ip, connect-ethernet | This document
+9 | ethernet-fcs | Ethernet Frame Check Sequence computed over the reconstructed Ethernet frame | connect-ethernet | This document
 
 --- back
 
