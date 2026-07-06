@@ -3646,35 +3646,36 @@ TEMPLATE_ASSIGN Capsule {
 <a href="#section-9.3" class="section-number selfRef">9.3. </a><a href="#name-http-datagram-derived-field" class="section-name selfRef">HTTP Datagram Derived Field Types Registry</a>
         </h3>
 <p id="section-9.3-1">IANA is requested to create a new registry titled "HTTP Datagram Derived Field Types". The registration policy is expert review as specified in <span><a href="https://rfc-editor.org/rfc/rfc8126#section-4.5" class="relref">Section 4.5</a> of [<a href="#IANA-POLICY" class="cite xref">IANA-POLICY</a>]</span>. This new registry governs the Derived Field types that appear in DERIVED_ASSIGN capsule and <code>derived</code> list of <code>http-datagram-contexts</code> dictionary.<a href="#section-9.3-1" class="pilcrow">¶</a></p>
-<p id="section-9.3-2">This new registry contains five columns:<a href="#section-9.3-2" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="section-9.3-3">
-          <dt id="section-9.3-3.1">Type:</dt>
-          <dd style="margin-left: 1.5em" id="section-9.3-3.2">
-            <p id="section-9.3-3.2.1">A positive integer identifying the field type<a href="#section-9.3-3.2.1" class="pilcrow">¶</a></p>
+<p id="section-9.3-2">Registrations are expected to reference a specification that defines how the field is derived. Such specifications are expected to describe the sender behavior and receiver behavior for the Derived Field Type, including how the relevant packet or frame header is located, the offset and length of the field, how the field value is computed, and any conditions under which the Derived Field Type is not applicable.<a href="#section-9.3-2" class="pilcrow">¶</a></p>
+<p id="section-9.3-3">This new registry contains five columns:<a href="#section-9.3-3" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-9.3-4">
+          <dt id="section-9.3-4.1">Type:</dt>
+          <dd style="margin-left: 1.5em" id="section-9.3-4.2">
+            <p id="section-9.3-4.2.1">A positive integer identifying the field type<a href="#section-9.3-4.2.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-9.3-3.3">Name:</dt>
-          <dd style="margin-left: 1.5em" id="section-9.3-3.4">
-            <p id="section-9.3-3.4.1">A short name of the field<a href="#section-9.3-3.4.1" class="pilcrow">¶</a></p>
+<dt id="section-9.3-4.3">Name:</dt>
+          <dd style="margin-left: 1.5em" id="section-9.3-4.4">
+            <p id="section-9.3-4.4.1">A short name of the field<a href="#section-9.3-4.4.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-9.3-3.5">Description:</dt>
-          <dd style="margin-left: 1.5em" id="section-9.3-3.6">
-            <p id="section-9.3-3.6.1">A description of the field<a href="#section-9.3-3.6.1" class="pilcrow">¶</a></p>
+<dt id="section-9.3-4.5">Description:</dt>
+          <dd style="margin-left: 1.5em" id="section-9.3-4.6">
+            <p id="section-9.3-4.6.1">A description of the field<a href="#section-9.3-4.6.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-9.3-3.7">Protocols:</dt>
-          <dd style="margin-left: 1.5em" id="section-9.3-3.8">
-            <p id="section-9.3-3.8.1">A list of HTTP Upgrade Tokens that the derived field type can apply<a href="#section-9.3-3.8.1" class="pilcrow">¶</a></p>
+<dt id="section-9.3-4.7">Protocols:</dt>
+          <dd style="margin-left: 1.5em" id="section-9.3-4.8">
+            <p id="section-9.3-4.8.1">A list of HTTP Upgrade Tokens that the derived field type can apply<a href="#section-9.3-4.8.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-9.3-3.9">Reference:</dt>
-          <dd style="margin-left: 1.5em" id="section-9.3-3.10">
-            <p id="section-9.3-3.10.1">An optional reference defining the use of the entry.<a href="#section-9.3-3.10.1" class="pilcrow">¶</a></p>
+<dt id="section-9.3-4.9">Reference:</dt>
+          <dd style="margin-left: 1.5em" id="section-9.3-4.10">
+            <p id="section-9.3-4.10.1">An optional reference defining the use of the entry.<a href="#section-9.3-4.10.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-9.3-4">The registry's initial entries are as follows:<a href="#section-9.3-4" class="pilcrow">¶</a></p>
+<p id="section-9.3-5">The registry's initial entries are as follows:<a href="#section-9.3-5" class="pilcrow">¶</a></p>
 <table class="center" id="table-16">
           <caption><a href="#table-16" class="selfRef">Table 16</a></caption>
 <thead>

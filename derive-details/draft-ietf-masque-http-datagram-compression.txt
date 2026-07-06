@@ -2010,6 +2010,14 @@ TEMPLATE_ASSIGN Capsule {
    the Derived Field types that appear in DERIVED_ASSIGN capsule and
    derived list of http-datagram-contexts dictionary.
 
+   Registrations are expected to reference a specification that defines
+   how the field is derived.  Such specifications are expected to
+   describe the sender behavior and receiver behavior for the Derived
+   Field Type, including how the relevant packet or frame header is
+   located, the offset and length of the field, how the field value is
+   computed, and any conditions under which the Derived Field Type is
+   not applicable.
+
    This new registry contains five columns:
 
    Type:  A positive integer identifying the field type
