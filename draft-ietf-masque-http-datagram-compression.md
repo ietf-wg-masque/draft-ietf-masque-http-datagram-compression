@@ -443,6 +443,39 @@ If a packet does not match any available Processing Context, the sender MUST use
 
 To avoid this suboptimal behavior, senders SHOULD define broad contexts that will be able to handle most or all expected traffic.
 
+### Conservative Template Composition {#template-composition}
+
+Reusable templates are most effective when they remain valid for many datagrams. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable for the lifetime of the Processing Context. Fields whose values can change during the lifetime of a flow SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant.
+
+Fields that are commonly suitable for static segments include fields that identify the packet format or the flow, such as:
+
+* Ethernet source and destination addresses, when stable for the frame sequence
+* EtherType
+* 802.1Q tag
+* IP version
+* Source and destination IP addresses
+* IPv4 TTL / IPv6 Hop Limit
+* IPv4 Protocol / IPv6 Next Header
+* Source and destination transport ports
+
+Fields that commonly vary during a flow, or that can be modified by endpoints or network devices, are generally poor candidates for static segments. Examples include:
+
+* IPv4 DSCP and ECN bits, and IPv6 Traffic Class
+* IPv4 Identification
+* IPv4 Flags and Fragment Offset, unless packets using the template are known not to be fragmented
+* IPv6 Flow Label, unless the sender knows it is stable for the flow
+* TCP Sequence Number
+* TCP Acknowledgement Number
+* TCP Flags
+* TCP Window
+* TCP Timestamp values
+* Packet length fields
+* Checksum fields
+
+When a field can be represented as a Derived Field defined by this specification, implementations SHOULD prefer using the corresponding Derived Field over including that field in a static segment or transmitting it as part of the variable payload. Packet length fields and complete checksums are examples of fields that are generally better represented using Derived Fields when supported by the peer.
+
+The suitability of a field for inclusion in a static segment depends on the deployment and the traffic being carried. For example, some deployments might preserve DSCP values while others rewrite them, and some applications might intentionally vary the IPv6 Flow Label. Implementations are encouraged to prefer templates that remain valid across many datagrams, even if those templates omit fewer bytes than a more aggressive template.
+
 ## Receiver behavior {#reconstruction}
 
 Upon receiving an HTTP Datagram with a non-zero Context ID, the receiver retrieves the referenced Processing Context and recursively resolves its parent contexts until Context ID 0 is reached.
@@ -493,6 +526,8 @@ If any offset exceeds the reconstructed packet length, the packet MUST be droppe
 # Examples
 
 This section illustrates how contexts are created and how senders form compact payloads. All offsets and lengths are in bits in the packet diagrams and field tables. All offsets and lengths are in bytes in segment tables and sample capsules.
+
+The examples below are illustrative. Implementations are expected to follow {{template-composition}} and select static and variable fields based on the traffic being carried and the stability of those fields in the relevant deployment.
 
 ## CONNECT-IP: TCP over IPv6 with template, derived fields and checksum offload
 
