@@ -719,6 +719,8 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
 
    *  EtherType
 
+   *  802.1Q tag
+
    *  IP version
 
    *  Source and destination IP addresses
