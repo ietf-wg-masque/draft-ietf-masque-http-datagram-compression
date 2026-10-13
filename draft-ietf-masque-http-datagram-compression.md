@@ -47,7 +47,7 @@ These templates allow endpoints to define parts of datagrams that are static and
 
 Additionally, this document defines a checksum offload procedure enabling receivers to complete Internet checksums using sender-provided partial values.
 
-These optimisations reduce per-packet overhead, processing cost, and increase the effective maximum transmission unit (MTU) when datagrams are encapsulated in QUIC DATAGRAM frames.
+These optimisations reduce per-packet overhead and processing cost. Compression can allow larger original packets to fit in QUIC DATAGRAM frames, depending on the applicable processing context and path maximum transmission unit (MTU).
 
 --- middle
 
@@ -65,7 +65,7 @@ Derived field processing allows the receiver to reconstruct certain header field
 
 In addition, this document defines a checksum offload procedure enabling endpoints to cooperatively compute Internet checksums, where the sender provides a partial checksum and the receiver completes the computation after reconstruction. This mirrors hardware checksum-offload behavior used on network interfaces and tunnel devices, reducing per-packet CPU cost for encapsulating or decapsulating CONNECT-IP and CONNECT-ETHERNET traffic.
 
-When HTTP Datagrams are encapsulated in QUIC DATAGRAM frames, these optimisations also increase the effective maximum transmission unit (MTU) by reducing the number of bytes carried inside each QUIC packet.
+When HTTP Datagrams are encapsulated in QUIC DATAGRAM frames, compression can allow larger original packets to fit within the same path maximum transmission unit (MTU). The benefit depends on the processing context applicable to each packet and does not provide a uniform increase in tunnel MTU; see {{mtu-considerations}}.
 
 All extensions are negotiated during the HTTP request/response handshake and signalled using Capsules on the reliable control stream. Endpoints can always fall back to transmitting complete datagrams using Context Identifier 0, which represents unoptimised datagrams containing the full payload as defined by the underlying HTTP Datagram protocol.
 
@@ -130,7 +130,7 @@ This document defines the following optional dictionary keys:
 
 `mtu` (Integer):
 
-: Upper limit on maximum reconstructed packet size the receiver is willing to accept.
+: Upper limit on reconstructed packet size the receiver is willing to accept, in bytes. This is a receiver limit, not a measurement of the path MTU or a guarantee that a packet of this size can be carried in a QUIC DATAGRAM frame.
 
 Endpoints MUST ignore unknown dictionary members. The absence of a member implies that the corresponding capability is not supported for contexts created by the peer.
 
@@ -145,6 +145,8 @@ If the peer advertises the `max-templates`  value greater than 0, the endpoint M
 An endpoint MUST NOT create templates exceeding the peer's advertised `max-template-segments` limit when that parameter is present.
 
 If the peer advertises an `mtu` limit, the sender MUST NOT transmit a datagram that would reconstruct into a packet larger than the advertised limit after all processing contexts have been applied.
+
+This limit applies whether the datagram is carried in a QUIC DATAGRAM frame or a DATAGRAM Capsule, including when no processing context is used.
 
 ### Derived Fields
 
@@ -443,9 +445,17 @@ If the context chain contains a checksum offload context, the sender MUST place 
 
 ### Context Selection
 
-If a packet does not match any available Processing Context, the sender MUST use Context ID 0 and transmit the complete packet. In such cases, if the packet is transmitted in an HTTP/3 Datagram, it might not fit within the current path MTU towards the peer. When the packet is larger than sizes known to fit within the path MTU as HTTP/3 Datagrams, the sender SHOULD instead send the packet in a DATAGRAM Capsule according to {{Section 3.5 of HTTP-DATAGRAMS}}, which will be encoded on the HTTP data stream and fragmented across QUIC packets if necessary.
+If a packet does not match any available Processing Context, the sender MUST use Context ID 0 and transmit the complete packet, subject to the size limits and oversized-packet handling described in {{mtu-considerations}}.
 
-To avoid this suboptimal behavior, senders SHOULD define broad contexts that will be able to handle most or all expected traffic.
+To reduce variation in compression across packets, senders SHOULD define broad contexts that will be able to handle most or all expected traffic.
+
+### MTU Considerations {#mtu-considerations}
+
+The advertised `mtu` bounds the reconstructed packet size. A packet that would not fit in a QUIC DATAGRAM frame without compression can still be sent if compression makes it fit. The transport size checks apply after compression: the resulting QUIC DATAGRAM frame MUST respect the peer's frame size limit, and the outer IP packet, including HTTP/3, QUIC, UDP, and IP overhead, MUST fit within the current path MTU. Even packets below the advertised `mtu` can exceed these transport limits when compression is insufficient or no matching context is available.
+
+Compression can differ between packets of the same size, including between PMTU probes and other traffic. A successful probe therefore does not establish that all packets of that original size will fit. PMTU information can also be shared across flows that use different contexts; see the discussion of shared PLPMTU state in item 9 of {{Section 3 of ?DPLPMTUD=RFC8899}}. When choosing a tunnel MTU or reporting a PMTU to carried traffic, endpoints SHOULD account for the least compression available to the traffic sharing that MTU, including packets sent without compression, rather than assuming the savings of a particular context.
+
+Oversized packets are handled according to the underlying HTTP Datagram protocol's MTU and error-signalling rules. In particular, {{Section 10.1 of CONNECT-IP}} and {{Section 6.1 of CONNECT-UDP}} recommend dropping oversized packets and sending ICMP Packet Too Big feedback instead of switching to DATAGRAM Capsules. Where permitted by the underlying protocol, DATAGRAM Capsules can carry larger datagrams across multiple transport packets, but introduce reliable delivery, head-of-line blocking, additional buffering and retransmission costs, and possible reordering relative to QUIC DATAGRAM frames. Such delivery can hide size limitations from PMTU discovery for the carried traffic; it does not increase the path MTU or relax the advertised `mtu` limit.
 
 ### Conservative Template Composition {#template-composition}
 
@@ -1029,7 +1039,7 @@ TEMPLATE_ASSIGN Capsule {
 ~~~
 {: #ipv6-tcp-template-assign title="TEMPLATE_ASSIGN Capsule for example IPv6/TCP packet"}
 
-The resulting processing context chain reduces per-packet overhead by removing 50 bytes of repeated header material, increasing the effective MTU when datagrams are encapsulated in QUIC DATAGRAM frames.
+The resulting processing context chain removes 50 bytes of repeated header material from packets that match the chain, reducing the space they require in QUIC DATAGRAM frames.
 
 The sender concatenates all variable regions in increasing offset order. Packets that do not match this template (for example packets with IPv6 extension headers or without TCP options) are sent using Context ID 0 or associated with a new context.
 
@@ -1152,7 +1162,7 @@ TEMPLATE_ASSIGN Capsule {
 ~~~
 {: #ipv4-udp-template-assign title="TEMPLATE_ASSIGN Capsule for example IPv4/UDP ethernet frame"}
 
-The resulting processing context chain reduces per-frame overhead by removing 34 bytes of repeated header material, increasing the effective MTU when datagrams are encapsulated in QUIC DATAGRAM frames.
+The resulting processing context chain removes 34 bytes of repeated header material from frames that match the chain, reducing the space they require in QUIC DATAGRAM frames.
 
 The sender concatenates all variable regions in increasing offset order.
 
