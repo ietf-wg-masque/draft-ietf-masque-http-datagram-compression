@@ -449,9 +449,9 @@ To avoid this suboptimal behavior, senders SHOULD define broad contexts that wil
 
 ### Conservative Template Composition {#template-composition}
 
-Reusable templates are most effective when they remain valid for many datagrams. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable for the lifetime of the Processing Context. Fields whose values can change during the lifetime of a flow SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.
+Reusable templates are most effective when they remain valid for many datagrams. This guidance applies to the packets using a particular template. A template can be used for a subset of the HTTP Datagrams associated with an HTTP request. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable across those packets for the lifetime of the Processing Context. Fields whose values can change across those packets SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.
 
-Fields that are commonly suitable for static segments include fields that identify the packet format or the flow, such as:
+Fields that are commonly suitable for static segments include:
 
 * Ethernet source and destination addresses, when stable for the frame sequence
 * EtherType
@@ -462,12 +462,12 @@ Fields that are commonly suitable for static segments include fields that identi
 * IPv4 Protocol / IPv6 Next Header
 * Source and destination transport ports
 
-Fields that commonly vary during a flow, or that can be modified by endpoints or network devices, are generally poor candidates for static segments. Examples include:
+Fields that commonly vary between packets, or that can be modified by endpoints or network devices, are generally poor candidates for static segments. Examples include:
 
 * IPv4 DSCP and ECN bits, and IPv6 Traffic Class
 * IPv4 Identification
 * IPv4 Flags and Fragment Offset, unless packets using the template are known not to be fragmented
-* IPv6 Flow Label, unless the sender knows it is stable for the flow
+* IPv6 Flow Label, unless the sender knows it has the same value in all packets using the template
 * TCP Sequence Number
 * TCP Acknowledgement Number
 * TCP Flags
