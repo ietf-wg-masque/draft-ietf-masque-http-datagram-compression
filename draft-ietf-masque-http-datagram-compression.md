@@ -38,6 +38,16 @@ normative:
 informative:
   IEEE802.3: DOI.10.1109/IEEESTD.2022.9844436
   IEEE802.1Q: DOI.10.1109/IEEESTD.2022.10004498
+  LINUX-CHECKSUM-OFFLOAD:
+    title: "Checksum Offloads"
+    author:
+      - org: "The Linux Kernel Development Community"
+    target: https://docs.kernel.org/networking/checksum-offloads.html
+  LINUX-TUN-TAP:
+    title: "Linux v7.2 TUN/TAP userspace API definitions"
+    author:
+      - org: "The Linux Kernel Development Community"
+    target: https://raw.githubusercontent.com/torvalds/linux/v7.2/include/uapi/linux/if_tun.h
 
 --- abstract
 
@@ -440,6 +450,8 @@ The sender MUST construct the payload as if the derived field octets were not pa
 ### Checksum Offload Contexts
 
 If the context chain contains a checksum offload context, the sender MUST place a precomputed partial Internet checksum value into the checksum field at Checksum Field Offset in the reconstructed packet image prior to transmission. This value is combined with the receiver computation as described in {{reconstruction}}.
+
+Checksum offload reduces per-packet CPU cost by allowing the sender to preserve a packet's partial checksum instead of completing the checksum before encapsulation. The partial value includes the pseudo-header contribution and is carried in the variable portion of the datagram, with Checksum Start Offset pointing to the transport header. After any template reconstruction and derived field processing, the receiver can delegate checksum completion to a capable NIC {{LINUX-CHECKSUM-OFFLOAD}} or pass the reconstructed packet with checksum-offload metadata through an operating-system interface, such as Linux TUN/TAP {{LINUX-TUN-TAP}}.
 
 ### Context Selection
 
