@@ -71,7 +71,7 @@ In addition, this document defines a checksum offload procedure enabling endpoin
 
 When HTTP Datagrams are encapsulated in QUIC DATAGRAM frames, these optimisations also increase the effective maximum transmission unit (MTU) by reducing the number of bytes carried inside each QUIC packet.
 
-All extensions are negotiated during the HTTP request/response handshake and signalled using Capsules on the reliable control stream. Endpoints can always fall back to transmitting complete datagrams using Context Identifier 0, which represents unoptimised datagrams containing the full payload as defined by the underlying HTTP Datagram protocol.
+All extensions are negotiated during the HTTP request/response handshake and signalled using Capsules on the reliable control stream. Endpoints can fall back to transmitting datagrams without these optimisations using the Context Identifier appropriate to the underlying HTTP Datagram protocol or extension. This is Context Identifier 0 for protocols that use it to carry unoptimised datagrams, but can also be a Context Identifier defined by another mechanism.
 
 # Conventions and Definitions
 
@@ -81,11 +81,15 @@ The following terms are used in this document:
 
 Context Identifier (Context ID):
 
-: A numeric identifier associated with a Processing Context. Context ID encoding and allocation follow the rules defined in {{Section 4 of !CONNECT-UDP=RFC9298}}. Context ID 0 indicates that the datagram payload is delivered without additional processing as defined by the underlying HTTP Datagram protocol.
+: A numeric identifier that determines how an HTTP Datagram payload is interpreted. Context ID encoding and allocation follow the rules defined in {{Section 4 of !CONNECT-UDP=RFC9298}}. A Context ID can identify a Processing Context or a context defined by the underlying HTTP Datagram protocol or another extension.
 
 Processing Context:
 
 : A set of rules describing how an HTTP Datagram payload is transformed before delivery to the target protocol. A Processing Context may reference a parent context, forming a processing chain. Processing Contexts are immutable once created.
+
+Terminal Context:
+
+: The context at which a processing chain ends. It is either Context ID 0 or a context defined by another mechanism, rather than by an *_ASSIGN capsule defined in this specification. The reconstructed payload is interpreted according to the semantics of this context.
 
 Template:
 
@@ -192,9 +196,11 @@ This specification defines multiple capsule types to construct, acknowledge, and
 
 ### Processing Context Construction {#assign}
 
-Processing contexts are created using capsules that define a new unique non-zero `Context ID` encoded as a variable-length integer. A Context ID MUST NOT be reused. As specified in {{Section 4 of CONNECT-UDP}}, even-numbered Context IDs are allocated by the client and odd-numbered by the proxy.
+Processing contexts are created using capsules that define a new unique non-zero `Context ID` encoded as a variable-length integer. A Context ID MUST NOT be reused, including one allocated by another mechanism on the same HTTP request. As specified in {{Section 4 of CONNECT-UDP}}, even-numbered Context IDs are allocated by the client and odd-numbered by the proxy.
 
-Each processing context MAY reference an already-defined parent context using `Next Context ID` encoded as a variable-length integer. A context MUST reference only a Context ID previously defined by the peer. Forward references are not permitted. Processing context without a parent is identified by `Next Context ID` set to 0. A processing chain MUST NOT contain more than one context of the same type. Other processing context chains can also have invalid combinations, if they include contradictory or mutually exclusive steps. Any capsule definition used for these contexts needs to define such cases if they are possible (such as for checksum offload contexts, {{checksum}}). A receiver that detects such an invalid processing chain condition MUST treat the context as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
+Each processing context references a next context using `Next Context ID` encoded as a variable-length integer. This MUST identify Context ID 0, a previously defined Processing Context, or a context already established by another mechanism. The referenced context MUST be available for use in the same sending direction. Forward references are not permitted. If `Next Context ID` identifies a Processing Context, the chain continues through that context. Otherwise, it identifies the Terminal Context and ends the processing chain.
+
+A processing chain MUST NOT contain more than one Processing Context of the same type. Other processing context chains can also have invalid combinations, if they include contradictory or mutually exclusive steps. Any capsule definition used for these contexts needs to define such cases if they are possible (such as for checksum offload contexts, {{checksum}}). A receiver that detects such an invalid processing chain condition MUST treat the context as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
 
 A receiver of an *_ASSIGN capsule with an invalid `Context ID` or unknown `Next Context ID` MUST treat it as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
 
@@ -204,15 +210,17 @@ For each *_ASSIGN capsule received, the receiver MUST transmit the corresponding
 
 Endpoints MAY transmit datagrams referencing contexts prior to receiving the *_ACK. A receiver MAY buffer datagrams referencing unknown Context IDs but MUST bound buffering by time and memory.
 
-A receiver of an *_ACK capsule with an unknown Context ID or any data after Context ID MUST treat it as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
+A receiver of an *_ACK capsule with an unknown Context ID, a Context ID not assigned by the corresponding *_ASSIGN capsule, or any data after Context ID MUST treat it as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
 
 ### Processing Context Closure {#close}
 
 Processing Contexts are retired by sending corresponding *_CLOSE capsule. Closing a context implicitly closes all contexts that reference it directly or transitively.
 
+Closing a Terminal Context defined by another mechanism also closes all Processing Contexts that reference it directly or transitively. The closure and any retention of the Terminal Context are governed by the mechanism that defined it. Closing a Processing Context does not close its Terminal Context.
+
 A receiver of a *_CLOSE capsule SHOULD retain the closed context and its descendants for a short period to allow in-flight datagrams to arrive, but MUST bound the retention time and memory usage.
 
-*_CLOSE capsules with unknown Context ID or any data after Context ID MUST be treated as malformed. Receiver of such capsules MUST follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
+*_CLOSE capsules with an unknown Context ID, a Context ID not assigned by the corresponding *_ASSIGN capsule, or any data after Context ID MUST be treated as malformed. Receiver of such capsules MUST follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
 
 ## Template Capsules
 
@@ -417,15 +425,17 @@ Processing of the CHECKSUM_CLOSE capsule is described in {{close}}
 
 This section defines how endpoints construct and consume HTTP Datagram payloads using Processing Contexts.
 
-A datagram carries a Context Identifier that selects the initial Processing Context. A context MAY reference a parent context using Next Context ID. The complete behavior is defined by recursively following parent contexts until reaching Context ID 0.
+A datagram carries a Context Identifier that selects either a Processing Context or a Terminal Context. A processing chain is resolved by following Next Context ID through contexts defined by the *_ASSIGN capsules in this specification until a Terminal Context is reached.
 
-Context ID 0 indicates that no processing is applied and the payload is delivered unchanged to the underlying HTTP Datagram protocol.
+After applying the Processing Contexts, the reconstructed payload is delivered using the Terminal Context ID and its associated semantics. A datagram that directly selects a Terminal Context is handled according to those semantics without applying the transformations defined in this specification.
+
+For example, if another extension has established Context ID 2, a TEMPLATE_ASSIGN capsule can define Context ID 4 with Next Context ID 2. A datagram received with Context ID 4 is reconstructed using that template and then handled as a datagram with Context ID 2.
 
 ## Sender behavior
 
-When sending a datagram using a Processing Context, the sender constructs the payload so that the receiver can reconstruct the final packet after applying the processing chain.
+When sending a datagram using a Processing Context, the sender constructs the payload so that the receiver can reconstruct the payload expected by the Terminal Context after applying the processing chain. The Terminal Context ID is conveyed through the chain's final Next Context ID and is not included in the payload being transformed.
 
-The sender MUST use a Context ID only after the corresponding *_ASSIGN capsule has been transmitted.
+The sender MUST use a Processing Context ID only after the corresponding *_ASSIGN capsule has been transmitted.
 
 ### Template Contexts
 
@@ -447,7 +457,7 @@ If the context chain contains a checksum offload context, the sender MUST place 
 
 ### Context Selection
 
-If a packet does not match any available Processing Context, the sender MUST use Context ID 0 and transmit the complete packet. In such cases, if the packet is transmitted in an HTTP/3 Datagram, it might not fit within the current path MTU towards the peer. When the packet is larger than sizes known to fit within the path MTU as HTTP/3 Datagrams, the sender SHOULD instead send the packet in a DATAGRAM Capsule according to {{Section 3.5 of HTTP-DATAGRAMS}}, which will be encoded on the HTTP data stream and fragmented across QUIC packets if necessary.
+If a packet does not match any available Processing Context, the sender MUST use the appropriate Terminal Context ID and transmit the complete payload required by that context. In such cases, if the packet is transmitted in an HTTP/3 Datagram, it might not fit within the current path MTU towards the peer. When the packet is larger than sizes known to fit within the path MTU as HTTP/3 Datagrams, the sender SHOULD instead send the packet in a DATAGRAM Capsule according to {{Section 3.5 of HTTP-DATAGRAMS}}, which will be encoded on the HTTP data stream and fragmented across QUIC packets if necessary.
 
 To avoid this suboptimal behavior, senders SHOULD define broad contexts that will be able to handle most or all expected traffic.
 
@@ -486,15 +496,17 @@ The suitability of a field for inclusion in a static segment depends on the depl
 
 ## Receiver behavior {#reconstruction}
 
-Upon receiving an HTTP Datagram with a non-zero Context ID, the receiver retrieves the referenced Processing Context and recursively resolves its parent contexts until Context ID 0 is reached.
+Upon receiving an HTTP Datagram whose Context ID identifies a Processing Context, the receiver retrieves that context and follows Next Context ID through any further Processing Contexts. The receiver MUST stop resolving the processing chain when it reaches Context ID 0 or a context known to have been defined by another mechanism. The receiver MUST retain this Terminal Context ID for delivery of the reconstructed payload.
 
-If any referenced context is unknown, the receiver MAY buffer the datagram as described in {{ack}} or drop it.
+If any referenced context is unknown, the receiver MAY buffer the datagram as described in {{ack}} or drop it. An unknown Context ID MUST NOT be treated as a valid Terminal Context merely because it does not identify an installed Processing Context.
 
 If multiple processing contexts are present in a chain, the receiver MUST apply them in the following order:
 
 1. Template reconstruction (if present)
 1. Derived field processing (if present)
 1. Checksum offload processing (if present)
+
+After reconstruction, the receiver MUST handle the resulting payload according to the Terminal Context's semantics, including any validation required by the underlying protocol or extension.
 
 ### Template Reconstruction
 
