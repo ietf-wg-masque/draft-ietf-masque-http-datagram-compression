@@ -5,8 +5,8 @@
 Multiplexed Application Substrate over QUIC Encryption      Y. Rosomakho
 Internet-Draft                                                   Zscaler
 Intended status: Standards Track                                T. Pauly
-Expires: 7 January 2027                                            Apple
-                                                             6 July 2026
+Expires: 20 April 2027                                             Apple
+                                                         17 October 2026
 
 
        Extensions to Compress and Derive Fields in HTTP Datagrams
@@ -64,7 +64,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 7 January 2027.
+   This Internet-Draft will expire on 20 April 2027.
 
 Copyright Notice
 
@@ -2188,9 +2188,9 @@ TEMPLATE_ASSIGN Capsule {
    [CONNECT-ETHERNET]
               Sedeño, A., "Proxying Ethernet Frames in HTTP", Work in
               Progress, Internet-Draft, draft-ietf-masque-connect-
-              ethernet-10, 30 June 2026,
+              ethernet-18, 16 October 2026,
               <https://datatracker.ietf.org/doc/html/draft-ietf-masque-
-              connect-ethernet-10>.
+              connect-ethernet-18>.
 
    [CONNECT-IP]
               Pauly, T., Ed., Schinazi, D., Chernyakhovsky, A.,
@@ -2225,8 +2225,8 @@ TEMPLATE_ASSIGN Capsule {
 
    [STRUCTURED-HTTP]
               Nottingham, M. and P. Kamp, "Structured Field Values for
-              HTTP", RFC 8941, DOI 10.17487/RFC8941, February 2021,
-              <https://www.rfc-editor.org/rfc/rfc8941>.
+              HTTP", RFC 9651, DOI 10.17487/RFC9651, September 2024,
+              <https://www.rfc-editor.org/rfc/rfc9651>.
 
 10.2.  Informative References
 
@@ -2249,7 +2249,7 @@ TEMPLATE_ASSIGN Capsule {
               July 2022, <https://doi.org/10.1109/ieeestd.2022.9844436>.
 
    [IPv4]     Postel, J., "Internet Protocol", STD 5, RFC 791,
-              DOI 10.17487/RFC0791, September 1981,
+              DOI 10.17487/RFC791, September 1981,
               <https://www.rfc-editor.org/rfc/rfc791>.
 
    [IPv6]     Deering, S. and R. Hinden, "Internet Protocol, Version 6
@@ -2272,7 +2272,7 @@ TEMPLATE_ASSIGN Capsule {
               <https://www.rfc-editor.org/rfc/rfc7323>.
 
    [UDP]      Postel, J., "User Datagram Protocol", STD 6, RFC 768,
-              DOI 10.17487/RFC0768, August 1980,
+              DOI 10.17487/RFC768, August 1980,
               <https://www.rfc-editor.org/rfc/rfc768>.
 
 Acknowledgments
