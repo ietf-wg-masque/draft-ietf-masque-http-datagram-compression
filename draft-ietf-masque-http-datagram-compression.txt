@@ -404,15 +404,17 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    A context MUST reference only a Context ID previously defined by the
    peer.  Forward references are not permitted.  Processing context
    without a parent is identified by Next Context ID set to 0.  A
-   processing chain MUST NOT contain more than one context of the same
-   type.  Other processing context chains can also have invalid
-   combinations, if they include contradictory or mutually exclusive
-   steps.  Any capsule definition used for these contexts needs to
-   define such cases if they are possible (such as for checksum offload
-   contexts, Section 4.4).  A receiver that detects such an invalid
-   processing chain condition MUST treat the context as malformed and
-   follow the error-handling procedure defined in Section 3.3 of
-   [HTTP-DATAGRAMS].
+   processing chain MUST contain at most one Template context (created
+   by TEMPLATE_ASSIGN), at most one Derived Field context (created by
+   DERIVED_ASSIGN), and at most one Checksum Offload context (created by
+   CHECKSUM_ASSIGN).  Other processing context chains can also have
+   invalid combinations, if they include contradictory or mutually
+   exclusive steps.  Any capsule definition used for these contexts
+   needs to define such cases if they are possible (such as for checksum
+   offload contexts, Section 4.4).  A receiver that detects such an
+   invalid processing chain condition MUST treat the context as
+   malformed and follow the error-handling procedure defined in
+   Section 3.3 of [HTTP-DATAGRAMS].
 
    A receiver of an *_ASSIGN capsule with an invalid Context ID or
    unknown Next Context ID MUST treat it as malformed and follow the
