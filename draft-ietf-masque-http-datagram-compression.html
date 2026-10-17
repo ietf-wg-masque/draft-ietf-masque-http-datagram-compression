@@ -2057,6 +2057,7 @@ CHECKSUM_CLOSE Capsule {
 <a href="#section-5.1.3" class="section-number selfRef">5.1.3. </a><a href="#name-checksum-offload-contexts" class="section-name selfRef">Checksum Offload Contexts</a>
           </h4>
 <p id="section-5.1.3-1">If the context chain contains a checksum offload context, the sender <span class="bcp14">MUST</span> place a precomputed partial Internet checksum value into the checksum field at Checksum Field Offset in the reconstructed packet image prior to transmission. This value is combined with the receiver computation as described in <a href="#reconstruction" class="auto internal xref">Section 5.2</a>.<a href="#section-5.1.3-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.3-2">Checksum offload reduces per-packet CPU cost by allowing the sender to preserve a packet's partial checksum instead of completing the checksum before encapsulation. The partial value includes the pseudo-header contribution and is carried in the variable portion of the datagram, with Checksum Start Offset pointing to the transport header. After any template reconstruction and derived field processing, the receiver can delegate checksum completion to a capable NIC <span>[<a href="#LINUX-CHECKSUM-OFFLOAD" class="cite xref">LINUX-CHECKSUM-OFFLOAD</a>]</span> or pass the reconstructed packet with checksum-offload metadata through an operating-system interface, such as Linux TUN/TAP <span>[<a href="#LINUX-TUN-TAP" class="cite xref">LINUX-TUN-TAP</a>]</span>.<a href="#section-5.1.3-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="context-selection">
@@ -3915,6 +3916,14 @@ TEMPLATE_ASSIGN Capsule {
 <dt id="IPv6-JUMBO">[IPv6-JUMBO]</dt>
         <dd>
 <span class="refAuthor">Borman, D.</span>, <span class="refAuthor">Deering, S.</span>, and <span class="refAuthor">R. Hinden</span>, <span class="refTitle">"IPv6 Jumbograms"</span>, <span class="seriesInfo">RFC 2675</span>, <span class="seriesInfo">DOI 10.17487/RFC2675</span>, <time datetime="1999-08" class="refDate">August 1999</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2675">https://www.rfc-editor.org/rfc/rfc2675</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="LINUX-CHECKSUM-OFFLOAD">[LINUX-CHECKSUM-OFFLOAD]</dt>
+        <dd>
+<span class="refAuthor">The Linux Kernel Development Community</span>, <span class="refTitle">"Checksum Offloads"</span>, <span>n.d.</span>, <span>&lt;<a href="https://docs.kernel.org/networking/checksum-offloads.html">https://docs.kernel.org/networking/checksum-offloads.html</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="LINUX-TUN-TAP">[LINUX-TUN-TAP]</dt>
+        <dd>
+<span class="refAuthor">The Linux Kernel Development Community</span>, <span class="refTitle">"Linux v7.2 TUN/TAP userspace API definitions"</span>, <span>n.d.</span>, <span>&lt;<a href="https://raw.githubusercontent.com/torvalds/linux/v7.2/include/uapi/linux/if_tun.h">https://raw.githubusercontent.com/torvalds/linux/v7.2/include/uapi/linux/if_tun.h</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="TCP">[TCP]</dt>
         <dd>

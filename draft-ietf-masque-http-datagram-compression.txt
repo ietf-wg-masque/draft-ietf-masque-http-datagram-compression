@@ -736,6 +736,17 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    image prior to transmission.  This value is combined with the
    receiver computation as described in Section 5.2.
 
+   Checksum offload reduces per-packet CPU cost by allowing the sender
+   to preserve a packet's partial checksum instead of completing the
+   checksum before encapsulation.  The partial value includes the
+   pseudo-header contribution and is carried in the variable portion of
+   the datagram, with Checksum Start Offset pointing to the transport
+   header.  After any template reconstruction and derived field
+   processing, the receiver can delegate checksum completion to a
+   capable NIC [LINUX-CHECKSUM-OFFLOAD] or pass the reconstructed packet
+   with checksum-offload metadata through an operating-system interface,
+   such as Linux TUN/TAP [LINUX-TUN-TAP].
+
 5.1.4.  Context Selection
 
    If a packet does not match any available Processing Context, the
@@ -2275,6 +2286,17 @@ TEMPLATE_ASSIGN Capsule {
               Borman, D., Deering, S., and R. Hinden, "IPv6 Jumbograms",
               RFC 2675, DOI 10.17487/RFC2675, August 1999,
               <https://www.rfc-editor.org/rfc/rfc2675>.
+
+   [LINUX-CHECKSUM-OFFLOAD]
+              The Linux Kernel Development Community, "Checksum
+              Offloads", n.d., <https://docs.kernel.org/networking/
+              checksum-offloads.html>.
+
+   [LINUX-TUN-TAP]
+              The Linux Kernel Development Community, "Linux v7.2 TUN/
+              TAP userspace API definitions", n.d.,
+              <https://raw.githubusercontent.com/torvalds/linux/v7.2/include/
+              uapi/linux/if_tun.h>.
 
    [TCP]      Eddy, W., Ed., "Transmission Control Protocol (TCP)",
               STD 7, RFC 9293, DOI 10.17487/RFC9293, August 2022,
