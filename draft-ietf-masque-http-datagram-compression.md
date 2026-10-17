@@ -59,9 +59,13 @@ Other HTTP Datagram-based protocols share similar properties: datagrams often co
 
 This document introduces a set of optional extensions that define Processing Contexts for HTTP Datagram payloads. A Processing Context describes transformations applied to a received datagram payload prior to delivery to the target protocol and may reference a parent context, forming a processing chain.
 
+The processing context framework is extensible and intended for use with HTTP Datagram-based protocols in general. Reusable templates operate on byte regions without requiring the receiver to identify the protocol carried in the payload. For example, templates can compress application protocol fields that remain constant across UDP payloads carried by CONNECT-UDP {{CONNECT-UDP}}.
+
 Reusable templates allow endpoints to associate a Context Identifier with a reusable packet layout consisting of static and variable byte regions. Once a template has been installed using reliable Capsules, datagrams referencing the same Context Identifier carry only the variable portions of the packet. This reduces the size of transmitted datagrams and processing overhead, while remaining compatibile with intermediaries that are unaware of these optimisations.
 
 Derived field processing allows the receiver to reconstruct certain header fields (for example packet length fields and complete checksums) based on the size and structure of the reconstructed packet. This eliminates the need for the sender to transmit such fields for every packet.
+
+Unlike reusable templates, Derived Field Types depend on the payload format. The initial types defined in {{derived-field-definitions}} apply to CONNECT-IP and CONNECT-ETHERNET. Additional types can be registered in {{iana-derived-fields}} to support other payload formats and HTTP Datagram-based protocols, with specifications defining how the relevant fields are located and reconstructed.
 
 In addition, this document defines a checksum offload procedure enabling endpoints to cooperatively compute Internet checksums, where the sender provides a partial checksum and the receiver completes the computation after reconstruction. This mirrors hardware checksum-offload behavior used on network interfaces and tunnel devices, reducing per-packet CPU cost for encapsulating or decapsulating CONNECT-IP and CONNECT-ETHERNET traffic.
 
