@@ -643,6 +643,8 @@ The sender determines the UDP header offset from the IPv4 Internet Header Length
 
 The sender MUST verify that the value of the UDP Length field in the original packet is equal to the number of octets from the start of the UDP header to the end of the IPv4 packet that will be reconstructed by the receiver. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
 
+UDP Options ({{Section 7 of ?UDP-OPTIONS=RFC9868}}) occupy a surplus area after the UDP payload but within the IP packet. This check prevents length derivation from incorrectly treating that area as part of the UDP payload.
+
 ### Receiver Behavior
 
 The receiver locates the IPv4 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv4 version value 4. The Internet Header Length (IHL) field MUST indicate an IPv4 header length of at least 20 octets and no larger than the reconstructed IPv4 packet.
@@ -676,6 +678,8 @@ The sender MUST only use this Derived Field Type for packets whose IPv6 header c
 The sender MUST locate the UDP header by traversing the IPv6 Next Header chain starting from the fixed IPv6 header. The sender MUST NOT use this Derived Field Type for a packet if this traversal does not identify a UDP header, if the UDP header is not fully contained in the IPv6 packet, or if the traversal encounters an IPv6 Fragment header before reaching the UDP header.
 
 The sender MUST verify that the value of the UDP Length field in the original packet is equal to the number of octets from the start of the UDP header to the end of the IPv6 packet that will be reconstructed by the receiver. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+UDP Options ({{Section 7 of UDP-OPTIONS}}) occupy a surplus area after the UDP payload but within the IP packet. This check prevents length derivation from incorrectly treating that area as part of the UDP payload.
 
 ### Receiver Behavior
 
