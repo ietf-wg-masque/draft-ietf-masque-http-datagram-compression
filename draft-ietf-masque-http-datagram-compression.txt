@@ -5,8 +5,8 @@
 Multiplexed Application Substrate over QUIC Encryption      Y. Rosomakho
 Internet-Draft                                                   Zscaler
 Intended status: Standards Track                                T. Pauly
-Expires: 20 April 2027                                             Apple
-                                                         17 October 2026
+Expires: 21 April 2027                                             Apple
+                                                         18 October 2026
 
 
        Extensions to Compress and Derive Fields in HTTP Datagrams
@@ -64,7 +64,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 20 April 2027.
+   This Internet-Draft will expire on 21 April 2027.
 
 Copyright Notice
 
@@ -767,16 +767,17 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
 5.1.5.  Conservative Template Composition
 
    Reusable templates are most effective when they remain valid for many
-   datagrams.  Senders SHOULD construct templates conservatively by
-   including only fields that are expected to remain stable for the
-   lifetime of the Processing Context.  Fields whose values can change
-   during the lifetime of a flow SHOULD remain in the variable portion
-   of the datagram unless the sender has specific knowledge that those
-   fields will remain constant or be particularly frequent for some
-   period of time.
+   datagrams.  This guidance applies to the packets using a particular
+   template.  A template can be used for a subset of the HTTP Datagrams
+   associated with an HTTP request.  Senders SHOULD construct templates
+   conservatively by including only fields that are expected to remain
+   stable across applicable packets for the lifetime of the Processing
+   Context.  Fields whose values can change across packets SHOULD remain
+   in the variable portion of the datagram unless the sender has
+   specific knowledge that those fields will remain constant or be
+   particularly frequent for some period of time.
 
-   Fields that are commonly suitable for static segments include fields
-   that identify the packet format or the flow, such as:
+   Fields that are commonly suitable for static segments include:
 
    *  Ethernet source and destination addresses, when stable for the
       frame sequence
@@ -795,7 +796,7 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
 
    *  Source and destination transport ports
 
-   Fields that commonly vary during a flow, or that can be modified by
+   Fields that commonly vary between packets, or that can be modified by
    endpoints or network devices, are generally poor candidates for
    static segments.  Examples include:
 
@@ -806,7 +807,8 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    *  IPv4 Flags and Fragment Offset, unless packets using the template
       are known not to be fragmented
 
-   *  IPv6 Flow Label, unless the sender knows it is stable for the flow
+   *  IPv6 Flow Label, unless the sender knows it has the same value in
+      all packets using the template
 
    *  TCP Sequence Number
 
