@@ -449,7 +449,7 @@ To avoid this suboptimal behavior, senders SHOULD define broad contexts that wil
 
 ### Conservative Template Composition {#template-composition}
 
-Reusable templates are most effective when they remain valid for many datagrams. This guidance applies to the packets using a particular template. A template can be used for a subset of the HTTP Datagrams associated with an HTTP request. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable across those packets for the lifetime of the Processing Context. Fields whose values can change across those packets SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.
+Reusable templates are most effective when they remain valid for many datagrams. This guidance applies to the packets using a particular template. A template can be used for a subset of the HTTP Datagrams associated with an HTTP request. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable across applicable packets for the lifetime of the Processing Context. Fields whose values can change across packets SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.
 
 Fields that are commonly suitable for static segments include:
 
