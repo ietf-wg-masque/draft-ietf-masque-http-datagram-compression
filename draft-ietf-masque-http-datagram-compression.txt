@@ -5,8 +5,8 @@
 Multiplexed Application Substrate over QUIC Encryption      Y. Rosomakho
 Internet-Draft                                                   Zscaler
 Intended status: Standards Track                                T. Pauly
-Expires: 21 April 2027                                             Apple
-                                                         18 October 2026
+Expires: 29 April 2027                                             Apple
+                                                         26 October 2026
 
 
        Extensions to Compress and Derive Fields in HTTP Datagrams
@@ -64,7 +64,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 21 April 2027.
+   This Internet-Draft will expire on 29 April 2027.
 
 Copyright Notice
 
@@ -1109,6 +1109,11 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    reconstructed by the receiver.  If the value does not match, the
    sender MUST NOT use this Derived Field Type for that packet.
 
+   UDP Options (Section 7 of [UDP-OPTIONS]) occupy a surplus area after
+   the UDP payload but within the IP packet.  This check prevents length
+   derivation from incorrectly treating that area as part of the UDP
+   payload.
+
 6.3.2.  Receiver Behavior
 
    The receiver locates the IPv4 header according to the rules in
@@ -1172,6 +1177,11 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    the UDP header to the end of the IPv6 packet that will be
    reconstructed by the receiver.  If the value does not match, the
    sender MUST NOT use this Derived Field Type for that packet.
+
+   UDP Options (Section 7 of [UDP-OPTIONS]) occupy a surplus area after
+   the UDP payload but within the IP packet.  This check prevents length
+   derivation from incorrectly treating that area as part of the UDP
+   payload.
 
 6.4.2.  Receiver Behavior
 
@@ -2314,6 +2324,11 @@ TEMPLATE_ASSIGN Capsule {
    [UDP]      Postel, J., "User Datagram Protocol", STD 6, RFC 768,
               DOI 10.17487/RFC768, August 1980,
               <https://www.rfc-editor.org/rfc/rfc768>.
+
+   [UDP-OPTIONS]
+              Touch, J. and C. Heard, Ed., "Transport Options for UDP",
+              RFC 9868, DOI 10.17487/RFC9868, October 2025,
+              <https://www.rfc-editor.org/rfc/rfc9868>.
 
 Acknowledgments
 
