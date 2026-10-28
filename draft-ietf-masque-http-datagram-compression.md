@@ -111,7 +111,7 @@ Derived Field:
 
 Checksum Offload:
 
-: A capability allowing the receiver to complete the Internet checksum according to {{!INCREMENTAL-CHECKSUM=RFC1624}} using a sender-provided partial checksum after reconstruction of the packet.
+: A capability allowing the receiver to complete the Internet checksum according to {{!INTERNET-CHECKSUM=RFC1071}} using a sender-provided partial checksum after reconstruction of the packet.
 
 Capsule:
 
@@ -467,6 +467,8 @@ The sender MUST construct the payload as if the derived field octets were not pa
 
 If the context chain contains a checksum offload context, the sender MUST place a precomputed partial Internet checksum value into the checksum field at Checksum Field Offset in the reconstructed packet image prior to transmission. This value is combined with the receiver computation as described in {{reconstruction}}.
 
+The partial value MUST be the 16-bit one's-complement sum of the checksum contributions not included in the receiver's checksum coverage, such as the pseudo-header. The sender MUST fold any carries into the low 16 bits without complementing the sum and store the value in network byte order.
+
 Checksum offload reduces per-packet CPU cost by allowing the sender to preserve a packet's partial checksum instead of completing the checksum before encapsulation. The partial value includes the pseudo-header contribution and is carried in the variable portion of the datagram, with Checksum Start Offset pointing to the transport header. After any template reconstruction and derived field processing, the receiver can delegate checksum completion to a capable NIC {{LINUX-CHECKSUM-OFFLOAD}} or pass the reconstructed packet with checksum-offload metadata through an operating-system interface, such as Linux TUN/TAP {{LINUX-TUN-TAP}}.
 
 ### Context Selection
@@ -556,12 +558,12 @@ If the required header cannot be located, the packet MUST be dropped.
 
 If a checksum offload context is present, the receiver completes the Internet checksum after all derived fields have been inserted.
 
-The receiver completes the checksum as follows:
+The receiver MUST complete the checksum as follows, using one's-complement arithmetic as described in {{INTERNET-CHECKSUM}}:
 
-1. Treat the checksum field as zero.
-1. Compute the one's-complement sum from Checksum Start Offset to L.
-1. Add (fold) the 16-bit value currently present at the checksum field.
-1. Write the final one's-complement result to the checksum field.
+1. Read and retain the 16-bit partial sum from the checksum field in network byte order.
+1. Compute the one's-complement sum of the octets from Checksum Start Offset to the end of the reconstructed packet, treating the checksum field as zero for this computation. Pair octets into 16-bit words in network byte order; if the number of octets is odd, pad the final octet with a zero octet for the computation only.
+1. Add the retained partial sum to this sum using end-around carry: repeatedly add any bits above the low 16 bits back into the low 16 bits until no carry remains.
+1. Take the bitwise one's complement of the resulting 16-bit sum and write it to the checksum field in network byte order. For a UDP checksum, encode a zero result as 0xffff.
 
 If any offset exceeds the reconstructed packet length, the packet MUST be dropped.
 
@@ -984,7 +986,7 @@ http-datagram-contexts = max-templates=1, max-templates-segments=2, derived=(1),
 ~~~
 {: #fig-http-datagram-contexts-example-1 title="http-datagram-contexts response example"}
 
-Since the proxy does not support TCP checksum derivation, but it supports checksum offloading, the client calculates checksum of IPv6 pseudo-header and places it in the TCP checksum field. Context for the offloaded checksum is defined using the CHECKSUM_ASSIGN capsule:
+Since the proxy does not support TCP checksum derivation, but it supports checksum offloading, the client calculates the folded, uncomplemented one's-complement sum of the IPv6 pseudo-header and places it in the TCP checksum field. Context for the offloaded checksum is defined using the CHECKSUM_ASSIGN capsule:
 
 ~~~
 CHECKSUM_ASSIGN Capsule {
