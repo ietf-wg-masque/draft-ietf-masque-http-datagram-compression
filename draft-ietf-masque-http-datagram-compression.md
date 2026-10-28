@@ -38,6 +38,16 @@ normative:
 informative:
   IEEE802.3: DOI.10.1109/IEEESTD.2022.9844436
   IEEE802.1Q: DOI.10.1109/IEEESTD.2022.10004498
+  LINUX-CHECKSUM-OFFLOAD:
+    title: "Checksum Offloads"
+    author:
+      - org: "The Linux Kernel Development Community"
+    target: https://docs.kernel.org/networking/checksum-offloads.html
+  LINUX-TUN-TAP:
+    title: "Linux v7.2 TUN/TAP userspace API definitions"
+    author:
+      - org: "The Linux Kernel Development Community"
+    target: https://raw.githubusercontent.com/torvalds/linux/v7.2/include/uapi/linux/if_tun.h
 
 --- abstract
 
@@ -59,9 +69,13 @@ Other HTTP Datagram-based protocols share similar properties: datagrams often co
 
 This document introduces a set of optional extensions that define Processing Contexts for HTTP Datagram payloads. A Processing Context describes transformations applied to a received datagram payload prior to delivery to the target protocol and may reference a parent context, forming a processing chain.
 
+The processing context framework is extensible and intended for use with HTTP Datagram-based protocols in general. Reusable templates operate on byte regions without requiring the receiver to identify the protocol carried in the payload. For example, templates can compress application protocol fields that remain constant across UDP payloads carried by CONNECT-UDP {{CONNECT-UDP}}.
+
 Reusable templates allow endpoints to associate a Context Identifier with a reusable packet layout consisting of static and variable byte regions. Once a template has been installed using reliable Capsules, datagrams referencing the same Context Identifier carry only the variable portions of the packet. This reduces the size of transmitted datagrams and processing overhead, while remaining compatibile with intermediaries that are unaware of these optimisations.
 
 Derived field processing allows the receiver to reconstruct certain header fields (for example packet length fields and complete checksums) based on the size and structure of the reconstructed packet. This eliminates the need for the sender to transmit such fields for every packet.
+
+Unlike reusable templates, Derived Field Types depend on the payload format. The initial types defined in {{derived-field-definitions}} apply to CONNECT-IP and CONNECT-ETHERNET. Additional types can be registered in {{iana-derived-fields}} to support other payload formats and HTTP Datagram-based protocols, with specifications defining how the relevant fields are located and reconstructed.
 
 In addition, this document defines a checksum offload procedure enabling endpoints to cooperatively compute Internet checksums, where the sender provides a partial checksum and the receiver completes the computation after reconstruction. This mirrors hardware checksum-offload behavior used on network interfaces and tunnel devices, reducing per-packet CPU cost for encapsulating or decapsulating CONNECT-IP and CONNECT-ETHERNET traffic.
 
@@ -105,7 +119,7 @@ Capsule:
 
 # Negotiation of Capabilities {#negotiation}
 
-Endpoints negotiate support for HTTP Datagram processing contexts during the HTTP request/response handshake by using the `http-datagram-contexts` HTTP header field, whose value is a Structured Field Dictionary as defined in {{Section 3.2 of !STRUCTURED-HTTP=RFC8941}}.
+Endpoints negotiate support for HTTP Datagram processing contexts during the HTTP request/response handshake by using the `http-datagram-contexts` HTTP header field, whose value is a Structured Field Dictionary as defined in {{Section 3.2 of !STRUCTURED-HTTP=RFC9651}}.
 
 ## Header Definition
 
@@ -196,7 +210,7 @@ Processing contexts are created using capsules that define a new unique non-zero
 
 Each processing context references a next context using `Next Context ID` encoded as a variable-length integer. This MUST identify Context ID 0, a previously defined Processing Context, or a context already established by another mechanism. The referenced context MUST be available for use in the same sending direction. Forward references are not permitted. If `Next Context ID` identifies a Processing Context, the chain continues through that context. Otherwise, it identifies the Terminal Context and ends the processing chain.
 
-A processing chain MUST NOT contain more than one Processing Context of the same type. Other processing context chains can also have invalid combinations, if they include contradictory or mutually exclusive steps. Any capsule definition used for these contexts needs to define such cases if they are possible (such as for checksum offload contexts, {{checksum}}). A receiver that detects such an invalid processing chain condition MUST treat the context as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
+A processing chain MUST contain at most one Template context (created by TEMPLATE_ASSIGN), at most one Derived Field context (created by DERIVED_ASSIGN), and at most one Checksum Offload context (created by CHECKSUM_ASSIGN). Other processing context chains can also have invalid combinations, if they include contradictory or mutually exclusive steps. Any capsule definition used for these contexts needs to define such cases if they are possible (such as for checksum offload contexts, {{checksum}}). A receiver that detects such an invalid processing chain condition MUST treat the context as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
 
 A receiver of an *_ASSIGN capsule with an invalid `Context ID` or unknown `Next Context ID` MUST treat it as malformed and follow the error-handling procedure defined in {{Section 3.3 of HTTP-DATAGRAMS}}.
 
@@ -451,6 +465,8 @@ The sender MUST construct the payload as if the derived field octets were not pa
 
 If the context chain contains a checksum offload context, the sender MUST place a precomputed partial Internet checksum value into the checksum field at Checksum Field Offset in the reconstructed packet image prior to transmission. This value is combined with the receiver computation as described in {{reconstruction}}.
 
+Checksum offload reduces per-packet CPU cost by allowing the sender to preserve a packet's partial checksum instead of completing the checksum before encapsulation. The partial value includes the pseudo-header contribution and is carried in the variable portion of the datagram, with Checksum Start Offset pointing to the transport header. After any template reconstruction and derived field processing, the receiver can delegate checksum completion to a capable NIC {{LINUX-CHECKSUM-OFFLOAD}} or pass the reconstructed packet with checksum-offload metadata through an operating-system interface, such as Linux TUN/TAP {{LINUX-TUN-TAP}}.
+
 ### Context Selection
 
 If a packet does not match any available Processing Context, the sender MUST use the appropriate Terminal Context ID and transmit the complete payload required by that context. In such cases, if the packet is transmitted in an HTTP/3 Datagram, it might not fit within the current path MTU towards the peer. When the packet is larger than sizes known to fit within the path MTU as HTTP/3 Datagrams, the sender SHOULD instead send the packet in a DATAGRAM Capsule according to {{Section 3.5 of HTTP-DATAGRAMS}}, which will be encoded on the HTTP data stream and fragmented across QUIC packets if necessary.
@@ -459,9 +475,9 @@ To avoid this suboptimal behavior, senders SHOULD define broad contexts that wil
 
 ### Conservative Template Composition {#template-composition}
 
-Reusable templates are most effective when they remain valid for many datagrams. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable for the lifetime of the Processing Context. Fields whose values can change during the lifetime of a flow SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.
+Reusable templates are most effective when they remain valid for many datagrams. This guidance applies to the packets using a particular template. A template can be used for a subset of the HTTP Datagrams associated with an HTTP request. Senders SHOULD construct templates conservatively by including only fields that are expected to remain stable across applicable packets for the lifetime of the Processing Context. Fields whose values can change across packets SHOULD remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.
 
-Fields that are commonly suitable for static segments include fields that identify the packet format or the flow, such as:
+Fields that are commonly suitable for static segments include:
 
 * Ethernet source and destination addresses, when stable for the frame sequence
 * EtherType
@@ -472,12 +488,12 @@ Fields that are commonly suitable for static segments include fields that identi
 * IPv4 Protocol / IPv6 Next Header
 * Source and destination transport ports
 
-Fields that commonly vary during a flow, or that can be modified by endpoints or network devices, are generally poor candidates for static segments. Examples include:
+Fields that commonly vary between packets, or that can be modified by endpoints or network devices, are generally poor candidates for static segments. Examples include:
 
 * IPv4 DSCP and ECN bits, and IPv6 Traffic Class
 * IPv4 Identification
 * IPv4 Flags and Fragment Offset, unless packets using the template are known not to be fragmented
-* IPv6 Flow Label, unless the sender knows it is stable for the flow
+* IPv6 Flow Label, unless the sender knows it has the same value in all packets using the template
 * TCP Sequence Number
 * TCP Acknowledgement Number
 * TCP Flags
@@ -639,6 +655,8 @@ The sender determines the UDP header offset from the IPv4 Internet Header Length
 
 The sender MUST verify that the value of the UDP Length field in the original packet is equal to the number of octets from the start of the UDP header to the end of the IPv4 packet that will be reconstructed by the receiver. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
 
+UDP Options ({{Section 7 of ?UDP-OPTIONS=RFC9868}}) occupy a surplus area after the UDP payload but within the IP packet. This check prevents length derivation from incorrectly treating that area as part of the UDP payload.
+
 ### Receiver Behavior
 
 The receiver locates the IPv4 header according to the rules in {{derived-field-definitions}}. The first four bits of the header MUST contain the IPv4 version value 4. The Internet Header Length (IHL) field MUST indicate an IPv4 header length of at least 20 octets and no larger than the reconstructed IPv4 packet.
@@ -672,6 +690,8 @@ The sender MUST only use this Derived Field Type for packets whose IPv6 header c
 The sender MUST locate the UDP header by traversing the IPv6 Next Header chain starting from the fixed IPv6 header. The sender MUST NOT use this Derived Field Type for a packet if this traversal does not identify a UDP header, if the UDP header is not fully contained in the IPv6 packet, or if the traversal encounters an IPv6 Fragment header before reaching the UDP header.
 
 The sender MUST verify that the value of the UDP Length field in the original packet is equal to the number of octets from the start of the UDP header to the end of the IPv6 packet that will be reconstructed by the receiver. If the value does not match, the sender MUST NOT use this Derived Field Type for that packet.
+
+UDP Options ({{Section 7 of UDP-OPTIONS}}) occupy a surplus area after the UDP payload but within the IP packet. This check prevents length derivation from incorrectly treating that area as part of the UDP payload.
 
 ### Receiver Behavior
 
