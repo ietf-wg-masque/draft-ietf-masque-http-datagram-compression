@@ -11,7 +11,7 @@
        This document defines extensions for HTTP Datagram-based protocols that improve transmission efficiency by introducing templates for compressing or deriving datagram fields. 
        These templates allow endpoints to define parts of datagrams that are static and can be removed, and other parts that can be derived (such as packet lengths and checksum values). 
        Additionally, this document defines a checksum offload procedure enabling receivers to complete Internet checksums using sender-provided partial values. 
-       These optimisations reduce per-packet overhead, processing cost, and increase the effective maximum transmission unit (MTU) when datagrams are encapsulated in QUIC DATAGRAM frames. 
+       These optimisations reduce per-packet overhead and processing cost. Compression can allow larger original packets to fit in QUIC DATAGRAM frames, depending on the applicable processing context and path maximum transmission unit (MTU). 
     " name="description">
 <meta content="xml2rfc 3.34.1" name="generator">
 <meta content="template" name="keyword">
@@ -1089,7 +1089,7 @@ svg {
 <p id="section-abstract-1">This document defines extensions for HTTP Datagram-based protocols that improve transmission efficiency by introducing templates for compressing or deriving datagram fields.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 <p id="section-abstract-2">These templates allow endpoints to define parts of datagrams that are static and can be removed, and other parts that can be derived (such as packet lengths and checksum values).<a href="#section-abstract-2" class="pilcrow">¶</a></p>
 <p id="section-abstract-3">Additionally, this document defines a checksum offload procedure enabling receivers to complete Internet checksums using sender-provided partial values.<a href="#section-abstract-3" class="pilcrow">¶</a></p>
-<p id="section-abstract-4">These optimisations reduce per-packet overhead, processing cost, and increase the effective maximum transmission unit (MTU) when datagrams are encapsulated in QUIC DATAGRAM frames.<a href="#section-abstract-4" class="pilcrow">¶</a></p>
+<p id="section-abstract-4">These optimisations reduce per-packet overhead and processing cost. Compression can allow larger original packets to fit in QUIC DATAGRAM frames, depending on the applicable processing context and path maximum transmission unit (MTU).<a href="#section-abstract-4" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-about-this-document">
@@ -1266,7 +1266,10 @@ svg {
                     <p id="section-toc.1-1.5.2.1.2.4.1"><a href="#section-5.1.4" class="auto internal xref">5.1.4</a>.  <a href="#name-context-selection" class="internal xref">Context Selection</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.5">
-                    <p id="section-toc.1-1.5.2.1.2.5.1"><a href="#section-5.1.5" class="auto internal xref">5.1.5</a>.  <a href="#name-conservative-template-compo" class="internal xref">Conservative Template Composition</a></p>
+                    <p id="section-toc.1-1.5.2.1.2.5.1"><a href="#section-5.1.5" class="auto internal xref">5.1.5</a>.  <a href="#name-mtu-considerations" class="internal xref">MTU Considerations</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1.2.6">
+                    <p id="section-toc.1-1.5.2.1.2.6.1"><a href="#section-5.1.6" class="auto internal xref">5.1.6</a>.  <a href="#name-conservative-template-compo" class="internal xref">Conservative Template Composition</a></p>
 </li>
                 </ul>
 </li>
@@ -1471,7 +1474,7 @@ svg {
 <p id="section-1-6">Derived field processing allows the receiver to reconstruct certain header fields (for example packet length fields and complete checksums) based on the size and structure of the reconstructed packet. This eliminates the need for the sender to transmit such fields for every packet.<a href="#section-1-6" class="pilcrow">¶</a></p>
 <p id="section-1-7">Unlike reusable templates, Derived Field Types depend on the payload format. The initial types defined in <a href="#derived-field-definitions" class="auto internal xref">Section 6</a> apply to CONNECT-IP and CONNECT-ETHERNET. Additional types can be registered in <a href="#iana-derived-fields" class="auto internal xref">Section 9.3</a> to support other payload formats and HTTP Datagram-based protocols, with specifications defining how the relevant fields are located and reconstructed.<a href="#section-1-7" class="pilcrow">¶</a></p>
 <p id="section-1-8">In addition, this document defines a checksum offload procedure enabling endpoints to cooperatively compute Internet checksums, where the sender provides a partial checksum and the receiver completes the computation after reconstruction. This mirrors hardware checksum-offload behavior used on network interfaces and tunnel devices, reducing per-packet CPU cost for encapsulating or decapsulating CONNECT-IP and CONNECT-ETHERNET traffic.<a href="#section-1-8" class="pilcrow">¶</a></p>
-<p id="section-1-9">When HTTP Datagrams are encapsulated in QUIC DATAGRAM frames, these optimisations also increase the effective maximum transmission unit (MTU) by reducing the number of bytes carried inside each QUIC packet.<a href="#section-1-9" class="pilcrow">¶</a></p>
+<p id="section-1-9">When HTTP Datagrams are encapsulated in QUIC DATAGRAM frames, compression can allow larger original packets to fit within the same path maximum transmission unit (MTU). The benefit depends on the processing context applicable to each packet and might not provide a uniform increase in tunnel MTU; see <a href="#mtu-considerations" class="auto internal xref">Section 5.1.5</a>.<a href="#section-1-9" class="pilcrow">¶</a></p>
 <p id="section-1-10">All extensions are negotiated during the HTTP request/response handshake and signalled using Capsules on the reliable control stream. Endpoints can fall back to transmitting datagrams without these optimisations using the Context Identifier appropriate to the underlying HTTP Datagram protocol or extension. This is Context Identifier 0 for protocols that use it to carry unoptimised datagrams, but can also be a Context Identifier defined by another mechanism.<a href="#section-1-10" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1575,7 +1578,7 @@ http-datagram-contexts = sf-dictionary
 <dt id="section-3.1-3.9">
 <code>mtu</code> (Integer):</dt>
           <dd style="margin-left: 1.5em" id="section-3.1-3.10">
-            <p id="section-3.1-3.10.1">Upper limit on maximum reconstructed packet size the receiver is willing to accept.<a href="#section-3.1-3.10.1" class="pilcrow">¶</a></p>
+            <p id="section-3.1-3.10.1">Upper limit on reconstructed packet size the receiver is willing to accept, in bytes. This is a receiver limit, not a measurement of the path MTU or a guarantee that a packet of this size can be carried in a QUIC DATAGRAM frame.<a href="#section-3.1-3.10.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
@@ -1596,6 +1599,7 @@ http-datagram-contexts = sf-dictionary
 <p id="section-3.2.1-1">If the peer advertises the <code>max-templates</code>  value greater than 0, the endpoint <span class="bcp14">MAY</span> create template contexts up to that limit using capsules defined in <a href="#capsules" class="auto internal xref">Section 4</a>.<a href="#section-3.2.1-1" class="pilcrow">¶</a></p>
 <p id="section-3.2.1-2">An endpoint <span class="bcp14">MUST NOT</span> create templates exceeding the peer's advertised <code>max-template-segments</code> limit when that parameter is present.<a href="#section-3.2.1-2" class="pilcrow">¶</a></p>
 <p id="section-3.2.1-3">If the peer advertises an <code>mtu</code> limit, the sender <span class="bcp14">MUST NOT</span> transmit a datagram that would reconstruct into a packet larger than the advertised limit after all processing contexts have been applied.<a href="#section-3.2.1-3" class="pilcrow">¶</a></p>
+<p id="section-3.2.1-4">This limit applies whether the datagram is carried in a QUIC DATAGRAM frame or a DATAGRAM Capsule, including when no processing context is used.<a href="#section-3.2.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="derived-fields">
@@ -2073,81 +2077,91 @@ CHECKSUM_CLOSE Capsule {
           <h4 id="name-context-selection">
 <a href="#section-5.1.4" class="section-number selfRef">5.1.4. </a><a href="#name-context-selection" class="section-name selfRef">Context Selection</a>
           </h4>
-<p id="section-5.1.4-1">If a packet does not match any available Processing Context, the sender <span class="bcp14">MUST</span> use the appropriate Terminal Context ID and transmit the complete payload required by that context. In such cases, if the packet is transmitted in an HTTP/3 Datagram, it might not fit within the current path MTU towards the peer. When the packet is larger than sizes known to fit within the path MTU as HTTP/3 Datagrams, the sender <span class="bcp14">SHOULD</span> instead send the packet in a DATAGRAM Capsule according to <span><a href="https://rfc-editor.org/rfc/rfc9297#section-3.5" class="relref">Section 3.5</a> of [<a href="#HTTP-DATAGRAMS" class="cite xref">HTTP-DATAGRAMS</a>]</span>, which will be encoded on the HTTP data stream and fragmented across QUIC packets if necessary.<a href="#section-5.1.4-1" class="pilcrow">¶</a></p>
-<p id="section-5.1.4-2">To avoid this suboptimal behavior, senders <span class="bcp14">SHOULD</span> define broad contexts that will be able to handle most or all expected traffic.<a href="#section-5.1.4-2" class="pilcrow">¶</a></p>
+<p id="section-5.1.4-1">If a packet does not match any available Processing Context, the sender <span class="bcp14">MUST</span> use the appropriate Terminal Context ID and transmit the complete payload required by that context, subject to the size limits and oversized-packet handling described in <a href="#mtu-considerations" class="auto internal xref">Section 5.1.5</a>.<a href="#section-5.1.4-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.4-2">To reduce variation in compression across packets, senders <span class="bcp14">SHOULD</span> define broad contexts that will be able to handle most or all expected traffic.<a href="#section-5.1.4-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="mtu-considerations">
+<section id="section-5.1.5">
+          <h4 id="name-mtu-considerations">
+<a href="#section-5.1.5" class="section-number selfRef">5.1.5. </a><a href="#name-mtu-considerations" class="section-name selfRef">MTU Considerations</a>
+          </h4>
+<p id="section-5.1.5-1">The advertised <code>mtu</code> bounds the reconstructed packet size. A packet that would not fit in a QUIC DATAGRAM frame without compression can still be sent if compression makes it fit. The transport size checks apply after compression: the resulting QUIC DATAGRAM frame <span class="bcp14">MUST</span> respect the peer's frame size limit, and the outer IP packet, including HTTP/3, QUIC, UDP, and IP overhead, <span class="bcp14">MUST</span> fit within the current path MTU. Even packets below the advertised <code>mtu</code> can exceed these transport limits when compression is insufficient or no matching context is available.<a href="#section-5.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.5-2">Compression can differ between packets of the same size, including between PMTU probes and other traffic. A successful probe therefore does not establish that all packets of that original size will fit. PMTU information can also be shared across flows that use different contexts; see the discussion of shared PLPMTU state in item 9 of <span><a href="https://rfc-editor.org/rfc/rfc8899#section-3" class="relref">Section 3</a> of [<a href="#DPLPMTUD" class="cite xref">DPLPMTUD</a>]</span>. When choosing a tunnel MTU or reporting a PMTU to carried traffic, endpoints <span class="bcp14">SHOULD</span> account for the least compression available to the traffic sharing that MTU, including packets sent without compression, rather than assuming the savings of a particular context.<a href="#section-5.1.5-2" class="pilcrow">¶</a></p>
+<p id="section-5.1.5-3">Oversized packets are handled according to the underlying HTTP Datagram protocol's MTU and error-signalling rules. In particular, <span><a href="https://rfc-editor.org/rfc/rfc9484#section-10.1" class="relref">Section 10.1</a> of [<a href="#CONNECT-IP" class="cite xref">CONNECT-IP</a>]</span> and <span><a href="https://rfc-editor.org/rfc/rfc9298#section-6.1" class="relref">Section 6.1</a> of [<a href="#CONNECT-UDP" class="cite xref">CONNECT-UDP</a>]</span> recommend dropping oversized packets and sending ICMP Packet Too Big feedback instead of switching to DATAGRAM Capsules. Where permitted by the underlying protocol, DATAGRAM Capsules can carry larger datagrams across multiple transport packets, but introduce reliable delivery, head-of-line blocking, additional buffering and retransmission costs, and possible reordering relative to QUIC DATAGRAM frames. Such delivery can hide size limitations from PMTU discovery for the carried traffic; it does not increase the path MTU or relax the advertised <code>mtu</code> limit.<a href="#section-5.1.5-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="template-composition">
-<section id="section-5.1.5">
+<section id="section-5.1.6">
           <h4 id="name-conservative-template-compo">
-<a href="#section-5.1.5" class="section-number selfRef">5.1.5. </a><a href="#name-conservative-template-compo" class="section-name selfRef">Conservative Template Composition</a>
+<a href="#section-5.1.6" class="section-number selfRef">5.1.6. </a><a href="#name-conservative-template-compo" class="section-name selfRef">Conservative Template Composition</a>
           </h4>
-<p id="section-5.1.5-1">Reusable templates are most effective when they remain valid for many datagrams. This guidance applies to the packets using a particular template. A template can be used for a subset of the HTTP Datagrams associated with an HTTP request. Senders <span class="bcp14">SHOULD</span> construct templates conservatively by including only fields that are expected to remain stable across applicable packets for the lifetime of the Processing Context. Fields whose values can change across packets <span class="bcp14">SHOULD</span> remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.<a href="#section-5.1.5-1" class="pilcrow">¶</a></p>
-<p id="section-5.1.5-2">Fields that are commonly suitable for static segments include:<a href="#section-5.1.5-2" class="pilcrow">¶</a></p>
+<p id="section-5.1.6-1">Reusable templates are most effective when they remain valid for many datagrams. This guidance applies to the packets using a particular template. A template can be used for a subset of the HTTP Datagrams associated with an HTTP request. Senders <span class="bcp14">SHOULD</span> construct templates conservatively by including only fields that are expected to remain stable across applicable packets for the lifetime of the Processing Context. Fields whose values can change across packets <span class="bcp14">SHOULD</span> remain in the variable portion of the datagram unless the sender has specific knowledge that those fields will remain constant or be particularly frequent for some period of time.<a href="#section-5.1.6-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.6-2">Fields that are commonly suitable for static segments include:<a href="#section-5.1.6-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.1.5-3.1">
-              <p id="section-5.1.5-3.1.1">Ethernet source and destination addresses, when stable for the frame sequence<a href="#section-5.1.5-3.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5.1.6-3.1">
+              <p id="section-5.1.6-3.1.1">Ethernet source and destination addresses, when stable for the frame sequence<a href="#section-5.1.6-3.1.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-3.2">
-              <p id="section-5.1.5-3.2.1">EtherType<a href="#section-5.1.5-3.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-3.2">
+              <p id="section-5.1.6-3.2.1">EtherType<a href="#section-5.1.6-3.2.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-3.3">
-              <p id="section-5.1.5-3.3.1">802.1Q tag<a href="#section-5.1.5-3.3.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-3.3">
+              <p id="section-5.1.6-3.3.1">802.1Q tag<a href="#section-5.1.6-3.3.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-3.4">
-              <p id="section-5.1.5-3.4.1">IP version<a href="#section-5.1.5-3.4.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-3.4">
+              <p id="section-5.1.6-3.4.1">IP version<a href="#section-5.1.6-3.4.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-3.5">
-              <p id="section-5.1.5-3.5.1">Source and destination IP addresses<a href="#section-5.1.5-3.5.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-3.5">
+              <p id="section-5.1.6-3.5.1">Source and destination IP addresses<a href="#section-5.1.6-3.5.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-3.6">
-              <p id="section-5.1.5-3.6.1">IPv4 TTL / IPv6 Hop Limit<a href="#section-5.1.5-3.6.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-3.6">
+              <p id="section-5.1.6-3.6.1">IPv4 TTL / IPv6 Hop Limit<a href="#section-5.1.6-3.6.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-3.7">
-              <p id="section-5.1.5-3.7.1">IPv4 Protocol / IPv6 Next Header<a href="#section-5.1.5-3.7.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-3.7">
+              <p id="section-5.1.6-3.7.1">IPv4 Protocol / IPv6 Next Header<a href="#section-5.1.6-3.7.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-3.8">
-              <p id="section-5.1.5-3.8.1">Source and destination transport ports<a href="#section-5.1.5-3.8.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-3.8">
+              <p id="section-5.1.6-3.8.1">Source and destination transport ports<a href="#section-5.1.6-3.8.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
-<p id="section-5.1.5-4">Fields that commonly vary between packets, or that can be modified by endpoints or network devices, are generally poor candidates for static segments. Examples include:<a href="#section-5.1.5-4" class="pilcrow">¶</a></p>
+<p id="section-5.1.6-4">Fields that commonly vary between packets, or that can be modified by endpoints or network devices, are generally poor candidates for static segments. Examples include:<a href="#section-5.1.6-4" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.1.5-5.1">
-              <p id="section-5.1.5-5.1.1">IPv4 DSCP and ECN bits, and IPv6 Traffic Class<a href="#section-5.1.5-5.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5.1.6-5.1">
+              <p id="section-5.1.6-5.1.1">IPv4 DSCP and ECN bits, and IPv6 Traffic Class<a href="#section-5.1.6-5.1.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.2">
-              <p id="section-5.1.5-5.2.1">IPv4 Identification<a href="#section-5.1.5-5.2.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.2">
+              <p id="section-5.1.6-5.2.1">IPv4 Identification<a href="#section-5.1.6-5.2.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.3">
-              <p id="section-5.1.5-5.3.1">IPv4 Flags and Fragment Offset, unless packets using the template are known not to be fragmented<a href="#section-5.1.5-5.3.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.3">
+              <p id="section-5.1.6-5.3.1">IPv4 Flags and Fragment Offset, unless packets using the template are known not to be fragmented<a href="#section-5.1.6-5.3.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.4">
-              <p id="section-5.1.5-5.4.1">IPv6 Flow Label, unless the sender knows it has the same value in all packets using the template<a href="#section-5.1.5-5.4.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.4">
+              <p id="section-5.1.6-5.4.1">IPv6 Flow Label, unless the sender knows it has the same value in all packets using the template<a href="#section-5.1.6-5.4.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.5">
-              <p id="section-5.1.5-5.5.1">TCP Sequence Number<a href="#section-5.1.5-5.5.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.5">
+              <p id="section-5.1.6-5.5.1">TCP Sequence Number<a href="#section-5.1.6-5.5.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.6">
-              <p id="section-5.1.5-5.6.1">TCP Acknowledgement Number<a href="#section-5.1.5-5.6.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.6">
+              <p id="section-5.1.6-5.6.1">TCP Acknowledgement Number<a href="#section-5.1.6-5.6.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.7">
-              <p id="section-5.1.5-5.7.1">TCP Flags<a href="#section-5.1.5-5.7.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.7">
+              <p id="section-5.1.6-5.7.1">TCP Flags<a href="#section-5.1.6-5.7.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.8">
-              <p id="section-5.1.5-5.8.1">TCP Window<a href="#section-5.1.5-5.8.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.8">
+              <p id="section-5.1.6-5.8.1">TCP Window<a href="#section-5.1.6-5.8.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.9">
-              <p id="section-5.1.5-5.9.1">TCP Timestamp values<a href="#section-5.1.5-5.9.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.9">
+              <p id="section-5.1.6-5.9.1">TCP Timestamp values<a href="#section-5.1.6-5.9.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.10">
-              <p id="section-5.1.5-5.10.1">Packet length fields<a href="#section-5.1.5-5.10.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.10">
+              <p id="section-5.1.6-5.10.1">Packet length fields<a href="#section-5.1.6-5.10.1" class="pilcrow">¶</a></p>
 </li>
-            <li class="normal" id="section-5.1.5-5.11">
-              <p id="section-5.1.5-5.11.1">Checksum fields<a href="#section-5.1.5-5.11.1" class="pilcrow">¶</a></p>
+            <li class="normal" id="section-5.1.6-5.11">
+              <p id="section-5.1.6-5.11.1">Checksum fields<a href="#section-5.1.6-5.11.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
-<p id="section-5.1.5-6">When a field can be represented as a Derived Field defined by this specification, implementations <span class="bcp14">SHOULD</span> prefer using the corresponding Derived Field instead of including that field in a static segment or transmitting it as part of the variable payload. Packet length fields and complete checksums are examples of fields that are generally better represented using Derived Fields when supported by the peer.<a href="#section-5.1.5-6" class="pilcrow">¶</a></p>
-<p id="section-5.1.5-7">The suitability of a field for inclusion in a static segment depends on the deployment and the traffic being carried. For example, some deployments might preserve DSCP values while others rewrite them, and some applications might intentionally vary the IPv6 Flow Label. Implementations are encouraged to prefer templates that remain valid across many datagrams, even if those templates omit fewer bytes than a more aggressive template.<a href="#section-5.1.5-7" class="pilcrow">¶</a></p>
+<p id="section-5.1.6-6">When a field can be represented as a Derived Field defined by this specification, implementations <span class="bcp14">SHOULD</span> prefer using the corresponding Derived Field instead of including that field in a static segment or transmitting it as part of the variable payload. Packet length fields and complete checksums are examples of fields that are generally better represented using Derived Fields when supported by the peer.<a href="#section-5.1.6-6" class="pilcrow">¶</a></p>
+<p id="section-5.1.6-7">The suitability of a field for inclusion in a static segment depends on the deployment and the traffic being carried. For example, some deployments might preserve DSCP values while others rewrite them, and some applications might intentionally vary the IPv6 Flow Label. Implementations are encouraged to prefer templates that remain valid across many datagrams, even if those templates omit fewer bytes than a more aggressive template.<a href="#section-5.1.6-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2751,7 +2765,7 @@ CHECKSUM_CLOSE Capsule {
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-examples" class="section-name selfRef">Examples</a>
       </h2>
 <p id="section-7-1">This section illustrates how contexts are created and how senders form compact payloads. All offsets and lengths are in bits in the packet diagrams and field tables. All offsets and lengths are in bytes in segment tables and sample capsules.<a href="#section-7-1" class="pilcrow">¶</a></p>
-<p id="section-7-2">The examples below are illustrative. Implementations are expected to follow <a href="#template-composition" class="auto internal xref">Section 5.1.5</a> and select static and variable fields based on the traffic being carried and the stability of those fields in the relevant deployment.<a href="#section-7-2" class="pilcrow">¶</a></p>
+<p id="section-7-2">The examples below are illustrative. Implementations are expected to follow <a href="#template-composition" class="auto internal xref">Section 5.1.6</a> and select static and variable fields based on the traffic being carried and the stability of those fields in the relevant deployment.<a href="#section-7-2" class="pilcrow">¶</a></p>
 <div id="connect-ip-tcp-over-ipv6-with-template-derived-fields-and-checksum-offload">
 <section id="section-7.1">
         <h3 id="name-connect-ip-tcp-over-ipv6-wi">
@@ -3198,7 +3212,7 @@ TEMPLATE_ASSIGN Capsule {
 <a href="#name-template_assign-capsule-for-" class="selfRef">TEMPLATE_ASSIGN Capsule for example IPv6/TCP packet</a>
           </figcaption></figure>
 </div>
-<p id="section-7.1-17">The resulting processing context chain reduces per-packet overhead by removing 50 bytes of repeated header material, increasing the effective MTU when datagrams are encapsulated in QUIC DATAGRAM frames.<a href="#section-7.1-17" class="pilcrow">¶</a></p>
+<p id="section-7.1-17">The resulting processing context chain removes 50 bytes of repeated header material from packets that match the chain, reducing the space they require in QUIC DATAGRAM frames.<a href="#section-7.1-17" class="pilcrow">¶</a></p>
 <p id="section-7.1-18">The sender concatenates all variable regions in increasing offset order. Packets that do not match this template (for example packets with IPv6 extension headers or without TCP options) are sent using Context ID 0 or associated with a new context.<a href="#section-7.1-18" class="pilcrow">¶</a></p>
 <p id="section-7.1-19">Upon receiving the datagram with Context ID 6, proxy re-assembles the datagram by concatenating static and variable segments according to the offsets, re-calculates Payload Length and inserts it into IPv6 header and completes the TCP checksum using the sender-provided pseudo-header partial checksum.<a href="#section-7.1-19" class="pilcrow">¶</a></p>
 </section>
@@ -3582,7 +3596,7 @@ TEMPLATE_ASSIGN Capsule {
 <a href="#name-template_assign-capsule-for-e" class="selfRef">TEMPLATE_ASSIGN Capsule for example IPv4/UDP ethernet frame</a>
           </figcaption></figure>
 </div>
-<p id="section-7.2-14">The resulting processing context chain reduces per-frame overhead by removing 34 bytes of repeated header material, increasing the effective MTU when datagrams are encapsulated in QUIC DATAGRAM frames.<a href="#section-7.2-14" class="pilcrow">¶</a></p>
+<p id="section-7.2-14">The resulting processing context chain removes 34 bytes of repeated header material from frames that match the chain, reducing the space they require in QUIC DATAGRAM frames.<a href="#section-7.2-14" class="pilcrow">¶</a></p>
 <p id="section-7.2-15">The sender concatenates all variable regions in increasing offset order.<a href="#section-7.2-15" class="pilcrow">¶</a></p>
 <p id="section-7.2-16">Upon receiving the datagram with Context ID 3, client re-assembles the datagram by appending variable segments to the static, re-calculates derived fields and inserts them at appropriate locations in the datagram.<a href="#section-7.2-16" class="pilcrow">¶</a></p>
 </section>
@@ -3904,6 +3918,10 @@ TEMPLATE_ASSIGN Capsule {
 <a href="#section-10.2" class="section-number selfRef">10.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
+<dt id="DPLPMTUD">[DPLPMTUD]</dt>
+        <dd>
+<span class="refAuthor">Fairhurst, G.</span>, <span class="refAuthor">Jones, T.</span>, <span class="refAuthor">Tüxen, M.</span>, <span class="refAuthor">Rüngeler, I.</span>, and <span class="refAuthor">T. Völker</span>, <span class="refTitle">"Packetization Layer Path MTU Discovery for Datagram Transports"</span>, <span class="seriesInfo">RFC 8899</span>, <span class="seriesInfo">DOI 10.17487/RFC8899</span>, <time datetime="2020-09" class="refDate">September 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8899">https://www.rfc-editor.org/rfc/rfc8899</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="IANA-POLICY">[IANA-POLICY]</dt>
         <dd>
 <span class="refAuthor">Cotton, M.</span>, <span class="refAuthor">Leiba, B.</span>, and <span class="refAuthor">T. Narten</span>, <span class="refTitle">"Guidelines for Writing an IANA Considerations Section in RFCs"</span>, <span class="seriesInfo">BCP 26</span>, <span class="seriesInfo">RFC 8126</span>, <span class="seriesInfo">DOI 10.17487/RFC8126</span>, <time datetime="2017-06" class="refDate">June 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8126">https://www.rfc-editor.org/rfc/rfc8126</a>&gt;</span>. </dd>
