@@ -285,9 +285,8 @@ Table of Contents
       Derived fields include length fields and complete checksums.
 
    Checksum Offload:  A capability allowing the receiver to complete the
-      Internet checksum according to [INCREMENTAL-CHECKSUM] using a
-      sender-provided partial checksum after reconstruction of the
-      packet.
+      Internet checksum according to [INTERNET-CHECKSUM] using a sender-
+      provided partial checksum after reconstruction of the packet.
 
    Capsule:  A reliable control-stream message, as defined in Section 3
       of [HTTP-DATAGRAMS], used in this specification to signal
@@ -780,6 +779,12 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    image prior to transmission.  This value is combined with the
    receiver computation as described in Section 5.2.
 
+   The partial value MUST be the 16-bit one's-complement sum of the
+   checksum contributions not included in the receiver's checksum
+   coverage, such as the pseudo-header.  The sender MUST fold any
+   carries into the low 16 bits without complementing the sum and store
+   the value in network byte order.
+
    Checksum offload reduces per-packet CPU cost by allowing the sender
    to preserve a packet's partial checksum instead of completing the
    checksum before encapsulation.  The partial value includes the
@@ -982,16 +987,26 @@ http-datagram-contexts = max-templates=65535, derived=(0 1), checksum=?0, mtu=15
    If a checksum offload context is present, the receiver completes the
    Internet checksum after all derived fields have been inserted.
 
-   The receiver completes the checksum as follows:
+   The receiver MUST complete the checksum as follows, using
+   one's-complement arithmetic as described in [INTERNET-CHECKSUM]:
 
-   1.  Treat the checksum field as zero.
+   1.  Read and retain the 16-bit partial sum from the checksum field in
+       network byte order.
 
-   2.  Compute the one's-complement sum from Checksum Start Offset to L.
+   2.  Compute the one's-complement sum of the octets from Checksum
+       Start Offset to the end of the reconstructed packet, treating the
+       checksum field as zero for this computation.  Pair octets into
+       16-bit words in network byte order; if the number of octets is
+       odd, pad the final octet with a zero octet for the computation
+       only.
 
-   3.  Add (fold) the 16-bit value currently present at the checksum
-       field.
+   3.  Add the retained partial sum to this sum using end-around carry:
+       repeatedly add any bits above the low 16 bits back into the low
+       16 bits until no carry remains.
 
-   4.  Write the final one's-complement result to the checksum field.
+   4.  Take the bitwise one's complement of the resulting 16-bit sum and
+       write it to the checksum field in network byte order.  For a UDP
+       checksum, encode a zero result as 0xffff.
 
    If any offset exceeds the reconstructed packet length, the packet
    MUST be dropped.
@@ -1769,9 +1784,10 @@ http-datagram-contexts = max-templates=1, max-templates-segments=2, derived=(1),
           Figure 15: http-datagram-contexts response example
 
    Since the proxy does not support TCP checksum derivation, but it
-   supports checksum offloading, the client calculates checksum of IPv6
-   pseudo-header and places it in the TCP checksum field.  Context for
-   the offloaded checksum is defined using the CHECKSUM_ASSIGN capsule:
+   supports checksum offloading, the client calculates the folded,
+   uncomplemented one's-complement sum of the IPv6 pseudo-header and
+   places it in the TCP checksum field.  Context for the offloaded
+   checksum is defined using the CHECKSUM_ASSIGN capsule:
 
    CHECKSUM_ASSIGN Capsule {
      Type (i) = 0x3ee31445,
@@ -2329,11 +2345,10 @@ TEMPLATE_ASSIGN Capsule {
               Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
               2022, <https://www.rfc-editor.org/rfc/rfc9297>.
 
-   [INCREMENTAL-CHECKSUM]
-              Rijsinghani, A., Ed., "Computation of the Internet
-              Checksum via Incremental Update", RFC 1624,
-              DOI 10.17487/RFC1624, May 1994,
-              <https://www.rfc-editor.org/rfc/rfc1624>.
+   [INTERNET-CHECKSUM]
+              Braden, R., Borman, D., and C. Partridge, "Computing the
+              Internet checksum", RFC 1071, DOI 10.17487/RFC1071,
+              September 1988, <https://www.rfc-editor.org/rfc/rfc1071>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,

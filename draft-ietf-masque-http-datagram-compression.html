@@ -1516,7 +1516,7 @@ appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶<
         <dd class="break"></dd>
 <dt id="section-2-3.11">Checksum Offload:</dt>
         <dd style="margin-left: 1.5em" id="section-2-3.12">
-          <p id="section-2-3.12.1">A capability allowing the receiver to complete the Internet checksum according to <span>[<a href="#INCREMENTAL-CHECKSUM" class="cite xref">INCREMENTAL-CHECKSUM</a>]</span> using a sender-provided partial checksum after reconstruction of the packet.<a href="#section-2-3.12.1" class="pilcrow">¶</a></p>
+          <p id="section-2-3.12.1">A capability allowing the receiver to complete the Internet checksum according to <span>[<a href="#INTERNET-CHECKSUM" class="cite xref">INTERNET-CHECKSUM</a>]</span> using a sender-provided partial checksum after reconstruction of the packet.<a href="#section-2-3.12.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 <dt id="section-2-3.13">Capsule:</dt>
@@ -2069,7 +2069,8 @@ CHECKSUM_CLOSE Capsule {
 <a href="#section-5.1.3" class="section-number selfRef">5.1.3. </a><a href="#name-checksum-offload-contexts" class="section-name selfRef">Checksum Offload Contexts</a>
           </h4>
 <p id="section-5.1.3-1">If the context chain contains a checksum offload context, the sender <span class="bcp14">MUST</span> place a precomputed partial Internet checksum value into the checksum field at Checksum Field Offset in the reconstructed packet image prior to transmission. This value is combined with the receiver computation as described in <a href="#reconstruction" class="auto internal xref">Section 5.2</a>.<a href="#section-5.1.3-1" class="pilcrow">¶</a></p>
-<p id="section-5.1.3-2">Checksum offload reduces per-packet CPU cost by allowing the sender to preserve a packet's partial checksum instead of completing the checksum before encapsulation. The partial value includes the pseudo-header contribution and is carried in the variable portion of the datagram, with Checksum Start Offset pointing to the transport header. After any template reconstruction and derived field processing, the receiver can delegate checksum completion to a capable NIC <span>[<a href="#LINUX-CHECKSUM-OFFLOAD" class="cite xref">LINUX-CHECKSUM-OFFLOAD</a>]</span> or pass the reconstructed packet with checksum-offload metadata through an operating-system interface, such as Linux TUN/TAP <span>[<a href="#LINUX-TUN-TAP" class="cite xref">LINUX-TUN-TAP</a>]</span>.<a href="#section-5.1.3-2" class="pilcrow">¶</a></p>
+<p id="section-5.1.3-2">The partial value <span class="bcp14">MUST</span> be the 16-bit one's-complement sum of the checksum contributions not included in the receiver's checksum coverage, such as the pseudo-header. The sender <span class="bcp14">MUST</span> fold any carries into the low 16 bits without complementing the sum and store the value in network byte order.<a href="#section-5.1.3-2" class="pilcrow">¶</a></p>
+<p id="section-5.1.3-3">Checksum offload reduces per-packet CPU cost by allowing the sender to preserve a packet's partial checksum instead of completing the checksum before encapsulation. The partial value includes the pseudo-header contribution and is carried in the variable portion of the datagram, with Checksum Start Offset pointing to the transport header. After any template reconstruction and derived field processing, the receiver can delegate checksum completion to a capable NIC <span>[<a href="#LINUX-CHECKSUM-OFFLOAD" class="cite xref">LINUX-CHECKSUM-OFFLOAD</a>]</span> or pass the reconstructed packet with checksum-offload metadata through an operating-system interface, such as Linux TUN/TAP <span>[<a href="#LINUX-TUN-TAP" class="cite xref">LINUX-TUN-TAP</a>]</span>.<a href="#section-5.1.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="context-selection">
@@ -2224,19 +2225,19 @@ CHECKSUM_CLOSE Capsule {
 <a href="#section-5.2.3" class="section-number selfRef">5.2.3. </a><a href="#name-checksum-offload-processing" class="section-name selfRef">Checksum Offload Processing</a>
           </h4>
 <p id="section-5.2.3-1">If a checksum offload context is present, the receiver completes the Internet checksum after all derived fields have been inserted.<a href="#section-5.2.3-1" class="pilcrow">¶</a></p>
-<p id="section-5.2.3-2">The receiver completes the checksum as follows:<a href="#section-5.2.3-2" class="pilcrow">¶</a></p>
+<p id="section-5.2.3-2">The receiver <span class="bcp14">MUST</span> complete the checksum as follows, using one's-complement arithmetic as described in <span>[<a href="#INTERNET-CHECKSUM" class="cite xref">INTERNET-CHECKSUM</a>]</span>:<a href="#section-5.2.3-2" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-5.2.3-3">
 <li id="section-5.2.3-3.1">
-              <p id="section-5.2.3-3.1.1">Treat the checksum field as zero.<a href="#section-5.2.3-3.1.1" class="pilcrow">¶</a></p>
+              <p id="section-5.2.3-3.1.1">Read and retain the 16-bit partial sum from the checksum field in network byte order.<a href="#section-5.2.3-3.1.1" class="pilcrow">¶</a></p>
 </li>
             <li id="section-5.2.3-3.2">
-              <p id="section-5.2.3-3.2.1">Compute the one's-complement sum from Checksum Start Offset to L.<a href="#section-5.2.3-3.2.1" class="pilcrow">¶</a></p>
+              <p id="section-5.2.3-3.2.1">Compute the one's-complement sum of the octets from Checksum Start Offset to the end of the reconstructed packet, treating the checksum field as zero for this computation. Pair octets into 16-bit words in network byte order; if the number of octets is odd, pad the final octet with a zero octet for the computation only.<a href="#section-5.2.3-3.2.1" class="pilcrow">¶</a></p>
 </li>
             <li id="section-5.2.3-3.3">
-              <p id="section-5.2.3-3.3.1">Add (fold) the 16-bit value currently present at the checksum field.<a href="#section-5.2.3-3.3.1" class="pilcrow">¶</a></p>
+              <p id="section-5.2.3-3.3.1">Add the retained partial sum to this sum using end-around carry: repeatedly add any bits above the low 16 bits back into the low 16 bits until no carry remains.<a href="#section-5.2.3-3.3.1" class="pilcrow">¶</a></p>
 </li>
             <li id="section-5.2.3-3.4">
-              <p id="section-5.2.3-3.4.1">Write the final one's-complement result to the checksum field.<a href="#section-5.2.3-3.4.1" class="pilcrow">¶</a></p>
+              <p id="section-5.2.3-3.4.1">Take the bitwise one's complement of the resulting 16-bit sum and write it to the checksum field in network byte order. For a UDP checksum, encode a zero result as 0xffff.<a href="#section-5.2.3-3.4.1" class="pilcrow">¶</a></p>
 </li>
           </ol>
 <p id="section-5.2.3-4">If any offset exceeds the reconstructed packet length, the packet <span class="bcp14">MUST</span> be dropped.<a href="#section-5.2.3-4" class="pilcrow">¶</a></p>
@@ -2942,7 +2943,7 @@ http-datagram-contexts = max-templates=1, max-templates-segments=2, derived=(1),
 <a href="#name-http-datagram-contexts-resp" class="selfRef">http-datagram-contexts response example</a>
           </figcaption></figure>
 </div>
-<p id="section-7.1-6">Since the proxy does not support TCP checksum derivation, but it supports checksum offloading, the client calculates checksum of IPv6 pseudo-header and places it in the TCP checksum field. Context for the offloaded checksum is defined using the CHECKSUM_ASSIGN capsule:<a href="#section-7.1-6" class="pilcrow">¶</a></p>
+<p id="section-7.1-6">Since the proxy does not support TCP checksum derivation, but it supports checksum offloading, the client calculates the folded, uncomplemented one's-complement sum of the IPv6 pseudo-header and places it in the TCP checksum field. Context for the offloaded checksum is defined using the CHECKSUM_ASSIGN capsule:<a href="#section-7.1-6" class="pilcrow">¶</a></p>
 <span id="name-checksum_assign-capsule-for-"></span><div id="ipv6-tcp-checksum-assign">
 <figure id="figure-16">
           <div class="alignLeft art-text artwork" id="section-7.1-7.1">
@@ -3893,9 +3894,9 @@ TEMPLATE_ASSIGN Capsule {
         <dd>
 <span class="refAuthor">Schinazi, D.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"HTTP Datagrams and the Capsule Protocol"</span>, <span class="seriesInfo">RFC 9297</span>, <span class="seriesInfo">DOI 10.17487/RFC9297</span>, <time datetime="2022-08" class="refDate">August 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9297">https://www.rfc-editor.org/rfc/rfc9297</a>&gt;</span>. </dd>
 <dd class="break"></dd>
-<dt id="INCREMENTAL-CHECKSUM">[INCREMENTAL-CHECKSUM]</dt>
+<dt id="INTERNET-CHECKSUM">[INTERNET-CHECKSUM]</dt>
         <dd>
-<span class="refAuthor">Rijsinghani, A., Ed.</span>, <span class="refTitle">"Computation of the Internet Checksum via Incremental Update"</span>, <span class="seriesInfo">RFC 1624</span>, <span class="seriesInfo">DOI 10.17487/RFC1624</span>, <time datetime="1994-05" class="refDate">May 1994</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc1624">https://www.rfc-editor.org/rfc/rfc1624</a>&gt;</span>. </dd>
+<span class="refAuthor">Braden, R.</span>, <span class="refAuthor">Borman, D.</span>, and <span class="refAuthor">C. Partridge</span>, <span class="refTitle">"Computing the Internet checksum"</span>, <span class="seriesInfo">RFC 1071</span>, <span class="seriesInfo">DOI 10.17487/RFC1071</span>, <time datetime="1988-09" class="refDate">September 1988</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc1071">https://www.rfc-editor.org/rfc/rfc1071</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
