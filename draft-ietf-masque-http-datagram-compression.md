@@ -87,6 +87,8 @@ All extensions are negotiated during the HTTP request/response handshake and sig
 
 {::boilerplate bcp14-tagged}
 
+Where this document defines capsule formats, it uses the notation from {{Section 1.3 of !QUIC=RFC9000}}. Where fields within capsules are integers, they are encoded using the variable-length integer encoding from {{Section 16 of QUIC}}. Integer values do not need to be encoded on the minimum number of bytes necessary.
+
 The following terms are used in this document:
 
 Context Identifier (Context ID):
