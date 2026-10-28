@@ -20,8 +20,8 @@ venue:
   type: "Working Group"
   mail: "masque@ietf.org"
   arch: "https://mailarchive.ietf.org/arch/browse/masque/"
-  github: "yaroslavros/connect-ip-optimizations"
-  latest: "https://yaroslavros.github.io/connect-ip-optimizations/draft-ietf-masque-http-datagram-compression.html"
+  github: "ietf-wg-masque/draft-ietf-masque-http-datagram-compression"
+  latest: "https://ietf-wg-masque.github.io/draft-ietf-masque-http-datagram-compression/draft-ietf-masque-http-datagram-compression.html"
 
 author:
  -
