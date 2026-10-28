@@ -4,16 +4,16 @@
 
 This is the working area for the individual Internet-Draft, "Reusable templates and checksum offload for CONNECT-IP".
 
-* [Editor's Copy](https://yaroslavros.github.io/connect-ip-optimizations/#go.draft-ietf-masque-http-datagram-compression.html)
+* [Editor's Copy](https://ietf-wg-masque.github.io/draft-ietf-masque-http-datagram-compression/#go.draft-ietf-masque-http-datagram-compression.html)
 * [Datatracker Page](https://datatracker.ietf.org/doc/draft-rosomakho-masque-connect-ip-optimizations)
 * [Individual Draft](https://datatracker.ietf.org/doc/html/draft-rosomakho-masque-connect-ip-optimizations)
-* [Compare Editor's Copy to Individual Draft](https://yaroslavros.github.io/connect-ip-optimizations/#go.draft-ietf-masque-http-datagram-compression.diff)
+* [Compare Editor's Copy to Individual Draft](**https://ietf-wg-masque.github.io/draft-ietf-masque-http-datagram-compression/#go.draft-ietf-masque-http-datagram-compression.diff**)
 
 
 ## Contributing
 
 See the
-[guidelines for contributions](https://github.com/yaroslavros/connect-ip-optimizations/blob/main/CONTRIBUTING.md).
+[guidelines for contributions](https://github.com/ietf-wg-masque/draft-ietf-masque-http-datagram-compression/blob/main/CONTRIBUTING.md).
 
 The contributing file also has tips on how to make contributions, if you
 don't already know how to do that.
