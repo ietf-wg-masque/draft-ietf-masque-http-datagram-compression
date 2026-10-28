@@ -65,7 +65,7 @@ Derived field processing allows the receiver to reconstruct certain header field
 
 In addition, this document defines a checksum offload procedure enabling endpoints to cooperatively compute Internet checksums, where the sender provides a partial checksum and the receiver completes the computation after reconstruction. This mirrors hardware checksum-offload behavior used on network interfaces and tunnel devices, reducing per-packet CPU cost for encapsulating or decapsulating CONNECT-IP and CONNECT-ETHERNET traffic.
 
-When HTTP Datagrams are encapsulated in QUIC DATAGRAM frames, compression can allow larger original packets to fit within the same path maximum transmission unit (MTU). The benefit depends on the processing context applicable to each packet and does not provide a uniform increase in tunnel MTU; see {{mtu-considerations}}.
+When HTTP Datagrams are encapsulated in QUIC DATAGRAM frames, compression can allow larger original packets to fit within the same path maximum transmission unit (MTU). The benefit depends on the processing context applicable to each packet and might not provide a uniform increase in tunnel MTU; see {{mtu-considerations}}.
 
 All extensions are negotiated during the HTTP request/response handshake and signalled using Capsules on the reliable control stream. Endpoints can always fall back to transmitting complete datagrams using Context Identifier 0, which represents unoptimised datagrams containing the full payload as defined by the underlying HTTP Datagram protocol.
 
