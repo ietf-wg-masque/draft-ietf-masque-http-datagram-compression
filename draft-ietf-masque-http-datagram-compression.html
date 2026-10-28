@@ -1444,41 +1444,42 @@ svg {
 "<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
 described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
 appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
-<p id="section-2-2">The following terms are used in this document:<a href="#section-2-2" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="section-2-3">
-        <dt id="section-2-3.1">Context Identifier (Context ID):</dt>
-        <dd style="margin-left: 1.5em" id="section-2-3.2">
-          <p id="section-2-3.2.1">A numeric identifier that determines how an HTTP Datagram payload is interpreted. Context ID encoding and allocation follow the rules defined in <span><a href="https://rfc-editor.org/rfc/rfc9298#section-4" class="relref">Section 4</a> of [<a href="#CONNECT-UDP" class="cite xref">CONNECT-UDP</a>]</span>. A Context ID can identify a Processing Context or a context defined by the underlying HTTP Datagram protocol or another extension.<a href="#section-2-3.2.1" class="pilcrow">¶</a></p>
+<p id="section-2-2">Where this document defines capsule formats, it uses the notation from <span><a href="https://rfc-editor.org/rfc/rfc9000#section-1.3" class="relref">Section 1.3</a> of [<a href="#QUIC" class="cite xref">QUIC</a>]</span>. Where fields within capsules are integers, they are encoded using the variable-length integer encoding from <span><a href="https://rfc-editor.org/rfc/rfc9000#section-16" class="relref">Section 16</a> of [<a href="#QUIC" class="cite xref">QUIC</a>]</span>. Integer values do not need to be encoded on the minimum number of bytes necessary.<a href="#section-2-2" class="pilcrow">¶</a></p>
+<p id="section-2-3">The following terms are used in this document:<a href="#section-2-3" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-2-4">
+        <dt id="section-2-4.1">Context Identifier (Context ID):</dt>
+        <dd style="margin-left: 1.5em" id="section-2-4.2">
+          <p id="section-2-4.2.1">A numeric identifier that determines how an HTTP Datagram payload is interpreted. Context ID encoding and allocation follow the rules defined in <span><a href="https://rfc-editor.org/rfc/rfc9298#section-4" class="relref">Section 4</a> of [<a href="#CONNECT-UDP" class="cite xref">CONNECT-UDP</a>]</span>. A Context ID can identify a Processing Context or a context defined by the underlying HTTP Datagram protocol or another extension.<a href="#section-2-4.2.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-2-3.3">Processing Context:</dt>
-        <dd style="margin-left: 1.5em" id="section-2-3.4">
-          <p id="section-2-3.4.1">A set of rules describing how an HTTP Datagram payload is transformed before delivery to the target protocol. A Processing Context may reference a parent context, forming a processing chain. Processing Contexts are immutable once created.<a href="#section-2-3.4.1" class="pilcrow">¶</a></p>
+<dt id="section-2-4.3">Processing Context:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-4.4">
+          <p id="section-2-4.4.1">A set of rules describing how an HTTP Datagram payload is transformed before delivery to the target protocol. A Processing Context may reference a parent context, forming a processing chain. Processing Contexts are immutable once created.<a href="#section-2-4.4.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-2-3.5">Terminal Context:</dt>
-        <dd style="margin-left: 1.5em" id="section-2-3.6">
-          <p id="section-2-3.6.1">The context at which a processing chain ends. It is either Context ID 0 or a context defined by another mechanism, rather than by an *_ASSIGN capsule defined in this specification. The reconstructed payload is interpreted according to the semantics of this context.<a href="#section-2-3.6.1" class="pilcrow">¶</a></p>
+<dt id="section-2-4.5">Terminal Context:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-4.6">
+          <p id="section-2-4.6.1">The context at which a processing chain ends. It is either Context ID 0 or a context defined by another mechanism, rather than by an *_ASSIGN capsule defined in this specification. The reconstructed payload is interpreted according to the semantics of this context.<a href="#section-2-4.6.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-2-3.7">Template:</dt>
-        <dd style="margin-left: 1.5em" id="section-2-3.8">
-          <p id="section-2-3.8.1">A reusable packet layout consisting of a sequence of static and variable segments. Static segments contain bytes removed from optimized datagrams, while variable segments correspond to bytes still carried in the datagram payload.<a href="#section-2-3.8.1" class="pilcrow">¶</a></p>
+<dt id="section-2-4.7">Template:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-4.8">
+          <p id="section-2-4.8.1">A reusable packet layout consisting of a sequence of static and variable segments. Static segments contain bytes removed from optimized datagrams, while variable segments correspond to bytes still carried in the datagram payload.<a href="#section-2-4.8.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-2-3.9">Derived Field:</dt>
-        <dd style="margin-left: 1.5em" id="section-2-3.10">
-          <p id="section-2-3.10.1">A header field whose value is generated by the receiver during reconstruction and written into the reconstructed packet rather than being transmitted in the datagram payload. Derived fields include length fields and complete checksums.<a href="#section-2-3.10.1" class="pilcrow">¶</a></p>
+<dt id="section-2-4.9">Derived Field:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-4.10">
+          <p id="section-2-4.10.1">A header field whose value is generated by the receiver during reconstruction and written into the reconstructed packet rather than being transmitted in the datagram payload. Derived fields include length fields and complete checksums.<a href="#section-2-4.10.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-2-3.11">Checksum Offload:</dt>
-        <dd style="margin-left: 1.5em" id="section-2-3.12">
-          <p id="section-2-3.12.1">A capability allowing the receiver to complete the Internet checksum according to <span>[<a href="#INTERNET-CHECKSUM" class="cite xref">INTERNET-CHECKSUM</a>]</span> using a sender-provided partial checksum after reconstruction of the packet.<a href="#section-2-3.12.1" class="pilcrow">¶</a></p>
+<dt id="section-2-4.11">Checksum Offload:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-4.12">
+          <p id="section-2-4.12.1">A capability allowing the receiver to complete the Internet checksum according to <span>[<a href="#INTERNET-CHECKSUM" class="cite xref">INTERNET-CHECKSUM</a>]</span> using a sender-provided partial checksum after reconstruction of the packet.<a href="#section-2-4.12.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-2-3.13">Capsule:</dt>
-        <dd style="margin-left: 1.5em" id="section-2-3.14">
-          <p id="section-2-3.14.1">A reliable control-stream message, as defined in <span><a href="https://rfc-editor.org/rfc/rfc9297#section-3" class="relref">Section 3</a> of [<a href="#HTTP-DATAGRAMS" class="cite xref">HTTP-DATAGRAMS</a>]</span>, used in this specification to signal creation, acknowledgement, or deletion of Processing Contexts.<a href="#section-2-3.14.1" class="pilcrow">¶</a></p>
+<dt id="section-2-4.13">Capsule:</dt>
+        <dd style="margin-left: 1.5em" id="section-2-4.14">
+          <p id="section-2-4.14.1">A reliable control-stream message, as defined in <span><a href="https://rfc-editor.org/rfc/rfc9297#section-3" class="relref">Section 3</a> of [<a href="#HTTP-DATAGRAMS" class="cite xref">HTTP-DATAGRAMS</a>]</span>, used in this specification to signal creation, acknowledgement, or deletion of Processing Contexts.<a href="#section-2-4.14.1" class="pilcrow">¶</a></p>
 </dd>
       <dd class="break"></dd>
 </dl>
@@ -3707,6 +3708,10 @@ TEMPLATE_ASSIGN Capsule {
 <dt id="INTERNET-CHECKSUM">[INTERNET-CHECKSUM]</dt>
         <dd>
 <span class="refAuthor">Braden, R.</span>, <span class="refAuthor">Borman, D.</span>, and <span class="refAuthor">C. Partridge</span>, <span class="refTitle">"Computing the Internet checksum"</span>, <span class="seriesInfo">RFC 1071</span>, <span class="seriesInfo">DOI 10.17487/RFC1071</span>, <time datetime="1988-09" class="refDate">September 1988</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc1071">https://www.rfc-editor.org/rfc/rfc1071</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="QUIC">[QUIC]</dt>
+        <dd>
+<span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="seriesInfo">RFC 9000</span>, <span class="seriesInfo">DOI 10.17487/RFC9000</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9000">https://www.rfc-editor.org/rfc/rfc9000</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
